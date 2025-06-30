@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Factory Simulation Interface</title>
+  <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.0/dist/frappe-gantt.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.0/dist/frappe-gantt.css"/>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    /* Basic Layout and Section Styling */
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+      padding: 20px; 
+      color: #333; 
+      min-height: 100vh;
+    }
+    
+    .section { 
+      background: white; 
+      padding: 20px; 
+      margin-bottom: 20px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+      font-weight: 600;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    h3 {
+      color: #34495e;
+      margin-bottom: 15px;
+      font-weight: 500;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 8px;
+    }
+    
+    /* Inline Form Elements Layout */
+    .inline { 
+      display: flex; 
+      gap: 15px; 
+      flex-wrap: wrap; 
+      margin-bottom: 15px; 
+      align-items: center; 
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+    
+    /* Form Control Styling */
+    select.form-control, input.form-control { 
+      padding: 10px 12px; 
+      font-size: 0.9rem;
+      height: auto;
+      border-radius: 6px;
+      border: 1px solid #ced4da;
+      transition: all 0.3s ease;
+    }
+    
+    select.form-control:focus, input.form-control:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+    
+    input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"] {
+      flex-grow: 1;
+      min-width: 140px;
+    }
+
+    input[type="file"] {
+      padding: 8px;
+      border: 2px dashed #3498db;
+      border-radius: 8px;
+      background: #f8f9fa;
+    }
+
+    /* Button Styling */
+    button.small-btn { 
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); 
+      color: white; 
+      border: none; 
+      padding: 10px 20px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+    }
+    
+    button.small-btn:hover { 
+      background: linear-gradient(135deg, #2980b9 0%, #21618c 100%); 
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+    }
+    
+    .btn-danger.btn-sm {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      border: none;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-danger.btn-sm:hover {
+      background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+      transform: translateY(-1px);
+    }
+
+    /* Submit Button Special Styling */
+    button[type="submit"] {
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+      padding: 12px 30px;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    button[type="submit"]:hover {
+      background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+    }
+
+    /* Tab Navigation */
+    .tabs { 
+      margin-bottom: 25px; 
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .tabs button { 
+      padding: 12px 24px; 
+      cursor: pointer; 
+      border: 2px solid #3498db;
+      background-color: white;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      color: #3498db;
+    }
+    
+    .tabs button:hover { 
+      background-color: #ebf3fd; 
+      transform: translateY(-1px);
+    }
+    
+    .tabs button.active { 
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); 
+      color: white; 
+      border-color: #2980b9; 
+      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    }
+
+    /* Hidden Utility Class */
+    .hidden { display: none; }
+
+    /* Table Styling for Results */
+    table { 
+      border-collapse: separate; 
+      border-spacing: 0;
+      width: 100%; 
+      margin-top: 20px; 
+      font-size: 0.9rem; 
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    th, td { 
+      border: 1px solid #dee2e6; 
+      padding: 12px 15px; 
+      text-align: left; 
+    }
+    
+    th { 
+      background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); 
+      font-weight: 600; 
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    th:first-child { border-top-left-radius: 8px; }
+    th:last-child { border-top-right-radius: 8px; }
+    
+    caption { 
+      caption-side: top; 
+      font-weight: 700; 
+      font-size: 1.2rem; 
+      padding: 15px 0; 
+      color: #2c3e50;
+      text-align: center;
+      background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+      border-radius: 8px 8px 0 0;
+      margin-bottom: 0;
+    }
+    
+    /* Enhanced Status Coloring for Table Rows/Cells */
+    .working { 
+      background: linear-gradient(135deg, #d5edda 0%, #c3e6cb 100%); 
+      color: #155724; 
+      font-weight: 500;
+    }
+    
+    .non-working-hour, .idle-shift-ended { 
+      background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%); 
+      color: #721c24; 
+      font-weight: 500;
+    }
+    
+    .planned-maintenance, .unplanned-maintenance { 
+      background: linear-gradient(135deg, #f5c6cb 0%, #f1959b 100%); 
+      color: #721c24; 
+      font-weight: 500;
+    }
+    
+    .idle-holiday { 
+      background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); 
+      color: #0c5460; 
+      font-weight: 500;
+    }
+    
+    .idle-weekend { 
+      background: linear-gradient(135deg, #cfe2ff 0%, #9ec5fe 100%); 
+      color: #0a58ca; 
+      font-weight: 500;
+    }
+
+    .idle-blocked {
+      background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); 
+      color: #856404; 
+      font-weight: 500;
+    }
+
+    /* Frappe Gantt Custom Classes */
+    .gantt-container .bar-planned-maintenance { fill: #f5c6cb !important; stroke: #721c24 !important; }
+    .gantt-container .bar-unplanned-maintenance { fill: #f5c6cb !important; stroke: #721c24 !important; }
+    .gantt-container .bar-idle-holiday { fill: #d1ecf1 !important; stroke: #0c5460 !important; }
+    .gantt-container .bar-idle-weekend { fill: #cfe2ff !important; stroke: #0a58ca !important; }
+    .gantt-container .bar-idle-shift-ended, .gantt-container .bar-non-working-hour { fill: #f8d7da !important; stroke: #721c24 !important; }
+    .gantt-container .bar-working { fill: #d5edda !important; stroke: #155724 !important; }
+    .gantt-container .bar-idle-blocked { fill: #fff3cd !important; stroke: #856404 !important; }
+
+    /* Machine Selection Styling */
+    .input-group {
+      display: flex;
+      align-items: stretch;
+      width: 280px;
+    }
+    
+    .input-group .btn {
+      flex-shrink: 0;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+      border-color: #6c757d;
+      font-weight: 500;
+    }
+    
+    .input-group .btn:hover {
+      background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+    }
+    
+    .input-group .selected-machines-display {
+      flex-grow: 1;
+      border: 1px solid #ced4da;
+      border-left: none;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      background-color: #f8f9fa;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: 0.9rem;
+    }
+
+    /* Form Check Styling */
+    .form-check {
+      margin-bottom: 15px;
+    }
+    
+    .form-check-input {
+      margin-top: 0.25rem;
+    }
+    
+    .form-check-label {
+      font-weight: 500;
+      color: #495057;
+    }
+
+    /* Modal Enhancements */
+    .modal-content {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .modal-header {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border-radius: 12px 12px 0 0;
+      border-bottom: none;
+    }
+    
+    .modal-title {
+      font-weight: 600;
+    }
+    
+    .modal-body {
+      padding: 25px;
+    }
+    
+    .modal-footer {
+      border-top: 1px solid #dee2e6;
+      padding: 20px 25px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .inline {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .input-group {
+        width: 100%;
+      }
+      
+      .tabs {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .tabs button {
+        width: 200px;
+      }
+    }
+
+    /* Loading and Success States */
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    
+    .success-message {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      color: #155724;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .error-message {
+      background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+      color: #721c24;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border: 1px solid #f1b0b7;
+    }
+  </style>
+</head>
+<body>
+  <h2>🏭 Factory Simulation Control Panel</h2>
+
+  <form id="simForm">
+    <div class="section">
+      <label for="schedule" class="form-label"><strong>📋 Upload Schedule (JSON):</strong></label>
+      <input type="file" id="schedule" accept="application/json" required class="form-control">
+    </div>
+
+    <div class="section">
+      <div class="form-check">
+        <input type="checkbox" id="weekendToggle" checked class="form-check-input">
+        <label for="weekendToggle" class="form-check-label"><strong>🏖️ Weekends Off</strong></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>⏰ Shift Configuration</h3>
+      <div id="shiftContainer"></div>
+      <button type="button" class="small-btn" onclick="addShift()">➕ Add Shift</button>
+    </div>
+
+    <div class="section">
+      <h3>🔧 Planned Maintenance (Machine & Date)</h3>
+      <div id="plannedContainer"></div>
+      <button type="button" class="small-btn" onclick="addPlanned()">➕ Add Planned</button>
+    </div>
+    
+    <div class="section">
+      <h3>⚠️ Unplanned Maintenance (Machine & Date Range)</h3>
+      <div id="unplannedContainer"></div>
+      <button type="button" class="small-btn" onclick="addUnplanned()">➕ Add Unplanned</button>
+    </div>
+
+    <button type="submit" class="small-btn">🚀 Run Simulation</button>
+  </form>
+
+  <div class="tabs">
+    <button id="tableViewBtn" onclick="showView('table')" class="active">📋 Table View</button>
+    <button id="ganttViewBtn" onclick="showView('gantt')">📊 Gantt View</button>
+  </div>
+  
+  <div id="tableResult" class="section"></div>
+  <div id="ganttResult" class="section hidden">
+    <svg id="gantt"></svg>
+  </div>
+
+  <div class="modal fade" id="machineSelectorModal" tabindex="-1" aria-labelledby="machineSelectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="machineSelectorModalLabel">🏭 Select Machines for Shift</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="selectAllMachines">
+              <label class="form-check-label" for="selectAllMachines"><strong>Select All/Clear All</strong></label>
+          </div>
+          <hr>
+          <div id="machineCheckboxesContainer">
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="confirmMachineSelectionBtn">Apply Selection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    // --- Global Variables ---
+    let allMachines = []; // Stores all machine names loaded from the schedule JSON
+    let currentShiftEntryBeingEdited = null; // To keep track of which shift's machines we're editing
+    
+    // DOM Element References
+    const shiftContainer     = document.getElementById('shiftContainer');
+    const plannedContainer   = document.getElementById('plannedContainer');
+    const unplannedContainer = document.getElementById('unplannedContainer');
+    const tableViewBtn = document.getElementById('tableViewBtn');
+    const ganttViewBtn = document.getElementById('ganttViewBtn');
+
+    // --- View Toggling Function ---
+    function showView(v) {
+      document.getElementById('tableResult').classList.toggle('hidden', v !== 'table');
+      document.getElementById('ganttResult').classList.toggle('hidden', v !== 'gantt');
+
+      // Update active tab button styling
+      tableViewBtn.classList.toggle('active', v === 'table');
+      ganttViewBtn.classList.toggle('active', v === 'gantt');
+    }
+
+    // --- Dynamic Form Element Addition Functions ---
+
+    function addShift() {
+      const div = document.createElement('div');
+      div.classList.add('inline', 'shift-entry'); // 'shift-entry' class helps in selecting all shift elements
+      div.innerHTML = `
+        <input class="shift-name form-control" placeholder="Shift Name" type="text" style="width: 140px;" required>
+        <input class="shift-start form-control" type="time" value="00:00" required>
+        <input class="shift-end form-control" type="time" value="23:59" required>
+        
+        <div class="input-group" style="width: 280px;">
+            <button type="button" class="btn btn-outline-secondary select-machines-btn" 
+                    onclick="openMachineSelector(this)" data-toggle="modal" data-target="#machineSelectorModal">
+                Select Machines
+            </button>
+            <span class="form-control selected-machines-display" style="flex: 1;">No machines selected</span>
+            <input type="hidden" class="shift-machines-hidden">
+        </div>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteShiftEntry(this)">Remove</button>
+      `;
+      shiftContainer.appendChild(div);
+      updateAllShiftDisplays(); // Ensure all displays are updated if existing shifts are present.
+    }
+
+    function deleteShiftEntry(buttonElement) {
+        // Removes the parent div (the entire shift entry) from the DOM
+        const divToRemove = buttonElement.parentNode;
+        divToRemove.remove();
+        // After removing a shift, update all other shift displays to reflect any newly available machines
+        updateAllShiftDisplays();
+    }
+
+    function addPlanned() {
+      const div = document.createElement('div'); 
+      div.classList.add('inline');
+      div.innerHTML = `
+        <input class="machine form-control" placeholder="Machine Name" type="text" required>
+        <input type="date" class="date form-control" required>
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.parentNode.remove()">Remove</button>
+      `;
+      plannedContainer.appendChild(div);
+    }
+
+    function addUnplanned() {
+      const div = document.createElement('div'); 
+      div.classList.add('inline');
+      div.innerHTML = `
+        <input class="machine form-control" placeholder="Machine Name" type="text" required>
+        <input type="datetime-local" class="start form-control" required>
+        <input type="datetime-local" class="end form-control" required>
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.parentNode.remove()">Remove</button>
+      `;
+      unplannedContainer.appendChild(div);
+    }
+
+    // --- New Machine Selector Modal Functions ---
+
+    function openMachineSelector(buttonElement) {
+        // Store the parent shift-entry div for later updating
+        currentShiftEntryBeingEdited = buttonElement.closest('.shift-entry');
+        
+        const machineCheckboxesContainer = document.getElementById('machineCheckboxesContainer');
+        machineCheckboxesContainer.innerHTML = ''; // Clear previous checkboxes
+
+        const selectAllCheckbox = document.getElementById('selectAllMachines');
+        selectAllCheckbox.checked = false; // Reset select all checkbox
+
+        // Get machines already selected for this specific shift from its hidden input
+        const hiddenInput = currentShiftEntryBeingEdited.querySelector('.shift-machines-hidden');
+        const selectedMachinesForThisShift = new Set(JSON.parse(hiddenInput.value || '[]'));
+
+        // Gather all machines selected in *other* shifts
+        const machinesUsedInOtherShifts = new Set();
+        document.querySelectorAll('.shift-entry').forEach(entryDiv => {
+            if (entryDiv !== currentShiftEntryBeingEdited) { // Exclude the current shift being edited
+                const otherHiddenInput = entryDiv.querySelector('.shift-machines-hidden');
+                JSON.parse(otherHiddenInput.value || '[]').forEach(m => machinesUsedInOtherShifts.add(m));
+            }
+        });
+
+        if (allMachines.length === 0) {
+            machineCheckboxesContainer.innerHTML = '<p class="text-center text-muted">Upload a schedule to see machines.</p>';
+            selectAllCheckbox.disabled = true;
+            return;
+        } else {
+            selectAllCheckbox.disabled = false;
+        }
+
+        allMachines.sort().forEach(machine => { // Sort machines alphabetically
+            const div = document.createElement('div');
+            div.classList.add('form-check');
+
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.classList.add('form-check-input', 'machine-checkbox');
+            input.id = `machine-${machine.replace(/\s/g, '-')}`; // Unique ID for label
+            input.value = machine;
+
+            const label = document.createElement('label');
+            label.classList.add('form-check-label');
+            label.htmlFor = input.id;
+            label.textContent = machine;
+
+            // Check if already selected for THIS shift
+            if (selectedMachinesForThisShift.has(machine)) {
+                input.checked = true;
+            }
+
+            // Disable if selected in another shift (and not already selected in this shift)
+            if (machinesUsedInOtherShifts.has(machine) && !selectedMachinesForThisShift.has(machine)) {
+                input.disabled = true;
+                label.textContent += " (Assigned to another shift)";
+                label.classList.add('text-muted'); // Visually grey out
+            }
+
+            div.appendChild(input);
+            div.appendChild(label);
+            machineCheckboxesContainer.appendChild(div);
+        });
+    }
+
+    // Event listener for "Select All/Clear All" checkbox within the modal
+    document.getElementById('selectAllMachines').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.querySelectorAll('#machineCheckboxesContainer .machine-checkbox').forEach(checkbox => {
+            if (!checkbox.disabled) { // Only affect non-disabled checkboxes
+                checkbox.checked = isChecked;
+            }
+        });
+    });
+
+    // Event listener for "Apply Selection" button in the modal
+    document.getElementById('confirmMachineSelectionBtn').addEventListener('click', function() {
+        if (!currentShiftEntryBeingEdited) return;
+
+        const selectedMachines = [];
+        document.querySelectorAll('#machineCheckboxesContainer .machine-checkbox:checked').forEach(checkbox => {
+            if (!checkbox.disabled) { // Only add if it's not a disabled (pre-selected by other shift) checkbox
+                selectedMachines.push(checkbox.value);
+            }
+        });
+
+        // Update the hidden input with the JSON string of selected machines
+        const hiddenInput = currentShiftEntryBeingEdited.querySelector('.shift-machines-hidden');
+        hiddenInput.value = JSON.stringify(selectedMachines);
+
+        // Update the visible display text
+        const displaySpan = currentShiftEntryBeingEdited.querySelector('.selected-machines-display');
+        if (selectedMachines.length > 0) {
+            displaySpan.textContent = selectedMachines.join(', ');
+            displaySpan.title = selectedMachines.join(', '); // For tooltip on hover
+        } else {
+            displaySpan.textContent = 'No machines selected';
+            displaySpan.title = '';
+        }
+
+        $('#machineSelectorModal').modal('hide'); // Close the modal
+        currentShiftEntryBeingEdited = null; // Reset the tracker
+        updateAllShiftDisplays(); // Re-render displays after selection
+    });
+
+    // Function to update the display for all shift entries (called after add/delete/load)
+    function updateAllShiftDisplays() {
+        document.querySelectorAll('.shift-entry').forEach(entryDiv => {
+            const hiddenInput = entryDiv.querySelector('.shift-machines-hidden');
+            const displaySpan = entryDiv.querySelector('.selected-machines-display');
+            const selectedMachines = JSON.parse(hiddenInput.value || '[]');
+            
+            if (selectedMachines.length > 0) {
+                displaySpan.textContent = selectedMachines.join(', ');
+                displaySpan.title = selectedMachines.join(', ');
+            } else {
+                displaySpan.textContent = 'No machines selected';
+                displaySpan.title = '';
+            }
+        });
+    }
+
+
+    // --- Form Submission Handler ---
+    document.getElementById('simForm').addEventListener('submit', async e=>{
+      e.preventDefault(); // Prevent default form submission and page reload
+
+      // 1. Read Schedule JSON file
+      const file = document.getElementById('schedule').files[0];
+      if(!file) {
+        alert('Please upload your schedule JSON file.');
+        return;
+      }
+      let schedule;
+      try {
+        schedule = JSON.parse(await file.text());
+        allMachines = Object.keys(schedule); // Update global allMachines list from the loaded schedule
+      } catch (error) {
+        alert('Invalid JSON file for schedule. Please upload a valid JSON.');
+        console.error('Error parsing schedule JSON:', error);
+        return;
+      }
+      
+      // 2. Gather other input parameters
+      const weekendsOff = document.getElementById('weekendToggle').checked;
+    
+      const planned = {}; // {machine: [date1, date2]}
+      const unplanned = {}; // {machine: ["start1 to end1", "start2 to end2"]}
+      const shifts = []; // [{name, start, end, machines: []}]
+
+      // Gather Planned Maintenance data
+      plannedContainer.querySelectorAll('.inline').forEach(div=>{
+        const m = div.querySelector('.machine').value;
+        const d = div.querySelector('.date').value;
+        if(m && d) { // Ensure both machine and date are provided
+          (planned[m] || (planned[m] = [])).push(d);
+        }
+      });
+
+      // Gather Unplanned Maintenance data
+      unplannedContainer.querySelectorAll('.inline').forEach(div=>{
+        const m = div.querySelector('.machine').value;
+        const s = div.querySelector('.start').value; // datetime-local format
+        const t = div.querySelector('.end').value;   // datetime-local format
+        if(m && s && t) { // Ensure machine, start, and end are provided
+          (unplanned[m] || (unplanned[m] = [])).push(`${s.replace('T',' ')} to ${t.replace('T',' ')}`);
+        }
+      });
+
+      // Gather Shift Configuration data
+      shiftContainer.querySelectorAll('.shift-entry').forEach(div=>{
+        const name = div.querySelector('.shift-name').value;
+        const start = div.querySelector('.shift-start').value;
+        const end = div.querySelector('.shift-end').value;
+        // Get all selected options from the hidden input (parsed from JSON string)
+        const machines = JSON.parse(div.querySelector('.shift-machines-hidden').value || '[]');
+        
+        if(name && start && end && machines.length > 0) { // All fields must be present and at least one machine selected
+          shifts.push({ name, start, end, machines });
+        } else if (name || start || end || machines.length > 0) {
+            // Warn if a partially filled shift entry exists
+            console.warn("Skipping partially filled shift entry:", {name, start, end, machines});
+            alert("Warning: Some shift entries are incomplete and will be ignored. Please ensure all fields are filled and at least one machine is selected for each shift.");
+        }
+      });
+      // The logic for default 24/7 shifts for unassigned machines is handled in the backend (sim.py).
+
+      // 3. Call Backend API
+      try {
+        const res = await fetch('/api/simulate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ schedule, planned, unplanned, weekends_off: weekendsOff, shifts })
+        });
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(`HTTP error! Status: ${res.status}, Message: ${errorText}`);
+        }
+
+        const data = await res.json();
+        
+        // 4. Render Results
+        renderTable(data);
+        renderGantt(data);
+        showView('table'); // Default to table view after simulation
+      } catch (error) {
+        console.error('Error running simulation:', error);
+        alert(`Failed to run simulation: ${error.message}. Please check console for details.`);
+      }
+    });
+
+    // --- Result Rendering Functions ---
+
+    // Render Simulation Results in Table Format
+    function renderTable(data) {
+      const container = document.getElementById('tableResult');
+      container.innerHTML = ''; // Clear previous results
+
+      if (Object.keys(data).length === 0) {
+          container.innerHTML = '<p class="text-center">No simulation data to display. Check your schedule and inputs.</p>';
+          return;
+      }
+
+      for(const [mach, logs] of Object.entries(data)) {
+        const tbl = document.createElement('table');
+        tbl.classList.add('table', 'table-bordered', 'table-striped'); // Add Bootstrap table classes
+        tbl.innerHTML = `
+          <caption><strong>Machine: ${mach}</strong></caption>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time Range</th>
+              <th>Product</th>
+              <th>Task</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        `;
+        const tbody = tbl.querySelector('tbody');
+
+        if (logs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center">No activity logged for this machine.</td></tr>`;
+        } else {
+            logs.forEach(l => {
+              const [d, t1] = l.start.split(' ');
+              const [, t2]    = l.end.split(' ');
+              const tr = document.createElement('tr');
+              // Add a class to the row based on status for conditional styling
+              tr.classList.add(l.status.toLowerCase().replace(/\s/g,'-').replace('(','').replace(')','')); 
+              tr.innerHTML = `
+                <td>${d}</td>
+                <td>${t1} – ${t2}</td>
+                <td>${l.product || 'N/A'}</td>
+                <td>${l.task_index !== null ? l.task_index : 'N/A'}</td>
+                <td>${l.status}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+        }
+        container.appendChild(tbl);
+      }
+    }
+
+    // Render Simulation Results in Gantt Chart Format
+    function renderGantt(data) {
+      const ganttTasks = []; // Tasks for Frappe Gantt chart
+      
+      // Frappe Gantt requires unique IDs for each bar.
+      // We will merge contiguous segments of the same status on the same machine.
+      Object.entries(data).forEach(([mach, logs])=>{
+        let currentGanttTask = null; // Holds the current task segment being built for merging
+
+        logs.forEach((l,i)=>{
+          // Generate a unique ID for each *potential* Gantt segment.
+          // This ID will be used if a new segment is created, or part of a merged ID.
+          // Using product, task_index, and status ensures tasks are grouped logically.
+          const segmentId = `${mach}-${l.product || 'null'}-${l.task_index || 'null'}-${l.status}`;
+          
+          // Convert start/end datetimes to Date objects for comparison
+          const currentSegmentStart = new Date(l.start);
+          const currentSegmentEnd = new Date(l.end);
+
+          // Check if current segment can be merged with the previous one
+          // Conditions for merging: same machine, same status, and contiguous time.
+          if (currentGanttTask && currentGanttTask.status === l.status && currentGanttTask.machine === mach &&
+              currentSegmentStart.getTime() === new Date(currentGanttTask.end).getTime()) {
+            
+            // If they can be merged, just extend the end time of the current Gantt task
+            currentGanttTask.end = l.end;
+          } else {
+            // If not mergeable, finalize the previous task (if any) and start a new one.
+            currentGanttTask = {
+                id: `${segmentId}-${l.start.replace(/[\s:-]/g,'')}`, // Make ID truly unique for Frappe
+                name: `${mach}: ${l.status}` + (l.product ? ` (${l.product} T${l.task_index})` : ''),
+                start: l.start,
+                end: l.end,
+                custom_class: l.status.toLowerCase().replace(/\s/g,'-').replace('(','').replace(')',''), // Sanitize for CSS class
+                status: l.status, // Store original status for internal logic
+                machine: mach // Store machine for merging logic
+            };
+            ganttTasks.push(currentGanttTask);
+          }
+        });
+      });
+
+      // Clear previous Gantt chart SVG and re-initialize
+      const ganttResultDiv = document.getElementById('ganttResult');
+      ganttResultDiv.innerHTML = `<svg id="gantt"></svg>`;
+
+      if (ganttTasks.length === 0) {
+          ganttResultDiv.innerHTML = '<p class="text-center">No Gantt chart data to display.</p>';
+          return;
+      }
+
+      new Gantt("#gantt", ganttTasks, {
+        view_modes: ['Hour', 'Day', 'Week', 'Month'], // Allow different zoom levels
+        view_mode: 'Day', // Default view mode
+        padding: 18,
+        bar_height: 25,
+        bar_corner_radius: 3,
+        date_format: 'YYYY-MM-DD',
+        custom_popup_html: function(task) {
+          // Custom HTML for the tooltip popup
+          return `
+            <div class="details-container">
+              <h5>${task.name}</h5>
+              <p>Status: <b>${task.status}</b></p>
+              <p>Start: ${task.start}</p>
+              <p>End: ${task.end}</p>
+            </div>
+          `;
+        }
+      });
+    }
+
+    // --- Event Listener for Schedule File Upload ---
+    document.getElementById('schedule').addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const scheduleContent = await file.text();
+            try {
+                const schedule = JSON.parse(scheduleContent);
+                allMachines = Object.keys(schedule); // Update the global list of all machines
+                
+                // Clear any existing shift UI entries and re-populate dropdowns
+                shiftContainer.innerHTML = ''; // Clear all existing shift input rows
+                // Force an update to all existing (or newly added) shift dropdowns
+                // This ensures they reflect the new list of machines.
+                updateAllShiftDisplays(); 
+
+                // Also clear maintenance entries, as they are machine-specific
+                plannedContainer.innerHTML = '';
+                unplannedContainer.innerHTML = '';
+
+            } catch (error) {
+                alert('Invalid JSON file for schedule. Please upload a valid JSON.');
+                console.error('Error parsing schedule JSON:', error);
+                allMachines = []; // Reset machines if file is invalid
+                updateAllShiftDisplays(); // Update dropdowns to reflect no machines
+            }
+        } else {
+            // If no file is selected (e.g., user cancels selection), clear machine list
+            allMachines = [];
+            updateAllShiftDisplays();
+            shiftContainer.innerHTML = '';
+            plannedContainer.innerHTML = '';
+            unplannedContainer.innerHTML = '';
+        }
+    });
+
+    // --- Initial Setup on Page Load ---
+    updateAllShiftDisplays(); // Initialize dropdowns/modal on load (will be empty)
+    showView('table'); // Default to table view when page loads
+  </script>
+</body>
+</html>
