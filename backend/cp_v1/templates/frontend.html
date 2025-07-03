@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Constraint Planner Scheduler</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-tertiary: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --border: #e2e8f0;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+      --radius: 4px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      color: var(--text-primary);
+      line-height: 1.4;
+      font-size: 12px;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 0.75rem; }
+    .header { text-align: center; margin-bottom: 1rem; }
+    .header-title {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.5rem; margin-bottom: 0.25rem;
+    }
+    .logo-container { padding: 0.2rem; border-radius: var(--radius); }
+    .logo-container img { height: 2.5rem; width: auto; }
+    .main-title {
+      font-size: 1.25rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header-description {
+      color: var(--text-secondary); font-size: 0.75rem;
+      max-width: 500px; margin: 0 auto;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      padding: 0.375rem 0.75rem; border: none; border-radius: var(--radius);
+      font-weight: 500; font-size: 0.75rem; cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline {
+      background: var(--bg-primary); color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .card {
+      background: var(--bg-primary); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      margin-bottom: 1rem;
+    }
+    .card-header {
+      padding: 0.75rem; border-bottom: 1px solid var(--border);
+      background: var(--bg-tertiary);
+    }
+    .card-title {
+      display: flex; align-items: center; gap: 0.375rem;
+      font-size: 0.875rem; font-weight: 600; margin-bottom: 0.125rem;
+      color: var(--primary);
+    }
+    .card-description { color: var(--text-secondary); font-size: 0.7rem; }
+    .card-content { padding: 0.75rem; }
+    .form-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 0.5rem; flex-wrap: wrap;
+    }
+    .label {
+      font-size: 0.7rem; font-weight: 500; color: var(--text-primary);
+      min-width: fit-content;
+    }
+    .input, .select {
+      padding: 0.25rem 0.375rem; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 0.7rem;
+      background: var(--bg-primary);
+    }
+    .input:focus, .select:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.1);
+    }
+    .input-sm { width: 3rem; }
+    .input-md { width: 6rem; }
+    .input-lg { width: 9rem; }
+    .item-card {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 0.5rem; background: var(--bg-secondary);
+      margin-bottom: 0.5rem;
+    }
+    .task-item {
+      display: flex; align-items: center; gap: 0.375rem;
+      padding: 0.375rem; background: var(--bg-tertiary);
+      border-radius: var(--radius); margin-bottom: 0.375rem;
+      flex-wrap: wrap;
+    }
+    .setup-matrix { overflow-x: auto; margin-top: 0.5rem; }
+    .matrix-table {
+      width: 100%; border-collapse: collapse; font-size: 0.7rem;
+    }
+    .matrix-table th, .matrix-table td {
+      border: 1px solid var(--border); padding: 0.25rem; text-align: center;
+    }
+    .matrix-table th {
+      background: var(--primary); color: white;
+      font-weight: 600; font-size: 0.65rem;
+    }
+    .matrix-table td { background: var(--bg-primary); }
+    .matrix-table .row-header {
+      background: var(--bg-tertiary); font-weight: 500;
+      text-align: left; font-size: 0.65rem;
+    }
+    .matrix-input {
+      width: 2.5rem; padding: 0.125rem; border: 1px solid var(--border);
+      border-radius: 2px; text-align: center; font-size: 0.65rem;
+    }
+    .table-container {
+      overflow-x: auto; border-radius: var(--radius);
+      border: 1px solid var(--border); margin: 0.5rem 0;
+    }
+    .table {
+      width: 100%; border-collapse: collapse;
+      background: var(--bg-primary); font-size: 0.7rem;
+    }
+    .table th {
+      background: var(--primary); color: white;
+      padding: 0.375rem; text-align: left;
+      font-weight: 600; font-size: 0.65rem;
+    }
+    .table td {
+      padding: 0.375rem; border-bottom: 1px solid var(--border);
+      font-size: 0.65rem;
+    }
+    .table tr:nth-child(even) { background: var(--bg-secondary); }
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 0.125rem 0.375rem; border-radius: 9999px;
+      font-size: 0.6rem; font-weight: 500;
+    }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-danger { background: #fee2e2; color: #dc2626; }
+    .icon { width: 0.875rem; height: 0.875rem; }
+    .text-center { text-align: center; }
+    .text-success { color: var(--success); }
+    .text-danger { color: var(--danger); }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .mb-1 { margin-bottom: 0.375rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    @media (max-width: 768px) {
+      .container { padding: 0.5rem; }
+      .main-title { font-size: 1rem; }
+      .form-row { flex-direction: column; align-items: stretch; }
+      .task-item { flex-direction: column; align-items: stretch; }
+    }
+    .draft-buttons {
+      position: absolute; top: 1rem; right: 1rem;
+      display: flex; gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="position:relative;">
+    <!-- Draft Save/Load -->
+    <div class="draft-buttons">
+      <button id="save-draft" class="btn btn-outline">Save Draft</button>
+      <button id="load-draft" class="btn btn-outline">Load Draft</button>
+      <input type="file" id="file-input" style="display:none" accept=".json"/>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-title">
+        <div class="logo-container">
+          <img src="/static/ntt-data-logo.png" alt="NTT Data Logo"/>
+        </div>
+        <h1 class="main-title">Constraint Planner Scheduler</h1>
+      </div>
+      <p class="header-description">
+        Production‐planning via constraint programming (OR-Tools CP-SAT), ensuring optimal on-time delivery.
+      </p>
+    </div>
+
+    <!-- Demo Button -->
+    <div class="text-center mb-1">
+      <button id="demo" class="btn btn-outline">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 7v10c0 2.21 1.79 4 4 4h8c2.21 0 4-1.79 4-4V7c0-2.21-1.79-4-4-4H8c-2.21 0-4 1.79-4 4z"/>
+        </svg>
+        Load Demo Data
+      </button>
+    </div>
+
+    <!-- Machines -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94
+                     3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426
+                     1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94
+                     1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426
+                     1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724
+                     1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724
+                     1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608
+                     2.296.07 2.572-1.065z"/>
+          </svg>
+          Machines Configuration
+        </div>
+        <div class="card-description">Define your manufacturing machines</div>
+      </div>
+      <div class="card-content">
+        <div class="form-row">
+  <label class="label">Number of operations:</label>
+  <input type="number" id="num-operations" min="1" class="input input-sm"/>
+</div>
+<div id="operations-list"></div>
+
+        <div class="form-row">
+          <label class="label">Number of machine types:</label>
+
+          <input type="number" id="num-machines" min="1" class="input input-sm"/>
+        </div>
+        <div id="machines-list"></div>
+      </div>
+    </div>
+
+    <!-- Products & Tasks -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8
+                     4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+          </svg>
+          Products & Tasks
+        </div>
+        <div class="card-description">Configure products and their manufacturing tasks</div>
+      </div>
+      <div class="card-content">
+        <div class="form-row">
+          <label class="label">Number of products:</label>
+          <input type="number" id="num-products" min="1" class="input input-sm"/>
+        </div>
+        <div id="products-list"></div>
+      </div>
+    </div>
+
+    <!-- Setup Times -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0
+                     11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Setup Times Matrix
+        </div>
+        <div class="card-description">Configure changeover times between products (hours)</div>
+      </div>
+      <div class="card-content">
+        <div id="setup-matrix"></div>
+      </div>
+    </div>
+
+    <!-- Orders -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002
+                     2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9
+                     5a2 2 0 002 2h2a2 2 0 002-2"/>
+          </svg>
+          Orders Configuration
+        </div>
+        <div class="card-description">Define customer orders and deadlines</div>
+      </div>
+      <div class="card-content">
+        <div class="form-row">
+          <label class="label">Number of orders:</label>
+          <input type="number" id="num-orders" min="1" class="input input-sm"/>
+        </div>
+        <div id="orders-list"></div>
+      </div>
+    </div>
+
+    <!-- Schedule Start -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7V3m8 4V3m-9
+                     8h10M5 21h14a2 2 0 002-2V7a2 2 0
+                     00-2-2H5a2 2 0 00-2 2v12a2 2 0 002
+                     2z"/>
+          </svg>
+          Schedule Configuration
+        </div>
+        <div class="card-description">Set the production schedule start time</div>
+      </div>
+      <div class="card-content">
+        <div class="form-row">
+          <label class="label">Start date & time:</label>
+          <input type="datetime-local" id="start-datetime" class="input input-lg"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Run Button -->
+    <div class="text-center mb-1">
+      <button id="run" class="btn btn-primary">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M14.828 14.828a4 4 0 01-5.656
+                   0M9 10h1m4 0h1m-6 4h.01M19 10a9
+                   9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Run Scheduler
+      </button>
+    </div>
+
+    <!-- Machine Utilization -->
+    <div class="card" id="utilization-card" style="display:none;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7V3m8 4V3m-9
+                     8h10M5 21h14a2 2 0 002-2V7a2
+                     2 0 00-2-2H5a2 2 0 00-2 2v12a2
+                     2 0 002 2z"/>
+          </svg>
+          Machine Utilization
+        </div>
+        <div class="card-description">How effectively the machines were used</div>
+      </div>
+      <div class="card-content">
+        <p id="utilization-score" class="font-medium text-center" style="font-size:0.85rem;"></p>
+      </div>
+    </div>
+    <!-- Optimality Info -->
+<div class="card" id="optimality-card" style="display:none;">
+  <div class="card-header">
+    <div class="card-title">Solver Optimality Info</div>
+    <div class="card-description">Status, objective value, and how close the result is to optimal</div>
+  </div>
+  <div class="card-content">
+    <p id="solver-status" class="mb-1"></p>
+    <p id="objective-value" class="mb-1"></p>
+    <p id="lower-bound" class="mb-1"></p>
+    <p id="optimality-gap" class="mb-1"></p>
+  </div>
+</div>
+
+
+    <!-- Results -->
+    <div id="results-section" style="display:none;">
+      <div id="output"></div>
+    </div>
+  </div>
+
+  <script>
+    function getOperations() {
+  return Array.from(document.querySelectorAll('.operation-name'))
+              .map(i => i.value.trim())
+              .filter(v => v);
+}
+
+    function renderOperations() {
+  const count = parseInt(document.getElementById('num-operations').value) || 0;
+  const wrap = document.getElementById('operations-list');
+  wrap.innerHTML = '';
+  for (let i = 1; i <= count; i++) {
+    const div = document.createElement('div');
+    div.className = 'form-row';
+    div.innerHTML = `
+      <label class="label">Operation ${i}:</label>
+      <input type="text" class="input input-md operation-name" placeholder="e.g. Cutting or Assembling">
+    `;
+    wrap.appendChild(div);
+  }
+}
+document.getElementById('num-operations').addEventListener('change', renderOperations);
+
+    // Initialize inputs
+    document.getElementById('num-machines').addEventListener('change', renderMachines);
+    document.getElementById('num-products').addEventListener('change', renderProducts);
+    document.getElementById('num-orders').addEventListener('change', renderOrders);
+    document.getElementById('start-datetime').value = new Date().toISOString().slice(0,16);
+
+    function renderMachines() {
+      const count = parseInt(this.value) || 0;
+      const wrap = document.getElementById('machines-list');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= count; i++) {
+        const div = document.createElement('div');
+        div.className = 'form-row';
+        const ops = getOperations();  // This fetches all operation names dynamically
+div.innerHTML = `
+  <label class="label">Machine ${i}:</label>
+  <input type="text" class="input input-md machine-name" placeholder="Machine ${i}">
+  <label class="label">Count:</label>
+  <input type="number" class="input input-sm machine-count" min="1" value="1">
+  <label class="label">Operations:</label>
+  <select class="select machine-ops" multiple>
+    ${ops.map(op => `<option value="${op}">${op}</option>`).join('')}
+  </select>
+`;
+
+        wrap.appendChild(div);
+        const lastSelect = div.querySelector('.machine-ops');
+new Choices(lastSelect, {
+  removeItemButton: true,
+  placeholder: true,
+  placeholderValue: 'Select operations',
+  shouldSort: false
+});
+
+      }
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const count = parseInt(document.getElementById('num-products').value) || 0;
+      const wrap = document.getElementById('products-list');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= count; i++) {
+        const div = document.createElement('div');
+        div.className = 'item-card';
+        div.innerHTML = `
+          <div class="form-row">
+            <label class="label">Product ${i} name:</label>
+            <input type="text" class="input input-md product-name" placeholder="Product ${i}">
+            <label class="label">Tasks:</label>
+            <input type="number" class="input input-sm num-tasks" min="1" placeholder="0">
+          </div>
+          <div class="tasks-container"></div>
+        `;
+        wrap.appendChild(div);
+        div.querySelector('.num-tasks').addEventListener('change', () => renderTasks(div));
+      }
+      renderSetupMatrix();
+    }
+
+    function renderTasks(prodDiv) {
+      const cnt = parseInt(prodDiv.querySelector('.num-tasks').value) || 0;
+      const taskWrap = prodDiv.querySelector('.tasks-container');
+      taskWrap.innerHTML = '';
+      const machines = getMachineNames();
+      for (let t = 1; t <= cnt; t++) {
+        const td = document.createElement('div');
+        td.className = 'task-item';
+        td.innerHTML = `
+          <label class="label">Task ${t}:</label>
+          <select class="task-operation">
+  ${getOperations().map(op => `<option value="${op}">${op}</option>`).join('')}
+</select>
+
+          <label class="label">Duration:</label>
+          <input type="number" class="input input-sm task-duration" min="1" placeholder="hrs">
+          <span class="label">hrs</span>
+        `;
+        taskWrap.appendChild(td);
+      }
+      renderSetupMatrix();
+    }
+
+    function renderSetupMatrix() {
+      const products = getProducts();
+      const wrap = document.getElementById('setup-matrix');
+      if (products.length < 2) {
+        wrap.innerHTML = '<p class="text-center" style="color:#64748b;font-style:italic;font-size:0.7rem;">Add at least 2 products to configure setup times</p>';
+        return;
+      }
+      let html = `
+        <div class="setup-matrix">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>From \\ To</th>
+                ${products.map(p => `<th>${p.name}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      products.forEach(p1 => {
+        html += `<tr><td class="row-header">${p1.name}</td>`;
+        products.forEach(p2 => {
+          if (p1.name === p2.name) {
+            html += '<td style="background:#f1f5f9;">-</td>';
+          } else {
+            html += `<td><input type="number" class="matrix-input" min="0" value="0" data-from="${p1.name}" data-to="${p2.name}"></td>`;
+          }
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      wrap.innerHTML = html;
+    }
+
+    function renderOrders() {
+      const cnt = parseInt(document.getElementById('num-orders').value) || 0;
+      const wrap = document.getElementById('orders-list');
+      wrap.innerHTML = '';
+      const prods = getProducts();
+      for (let i = 1; i <= cnt; i++) {
+        const div = document.createElement('div');
+        div.className = 'item-card';
+        let html = `<h4 class="font-semibold mb-1" style="font-size:0.75rem;">Order ${i}</h4>`;
+        prods.forEach(p => {
+          html += `
+            <div class="form-row">
+              <label class="label">${p.name} qty:</label>
+              <input type="number" class="input input-sm" data-order="${i-1}" data-product="${p.name}" min="0" value="0">
+            </div>`;
+        });
+        html += `
+          <div class="form-row">
+            <label class="label">Deadline:</label>
+            <input type="datetime-local" class="input input-lg order-deadline">
+          </div>`;
+        div.innerHTML = html;
+        wrap.appendChild(div);
+      }
+    }
+
+    function getMachineNames() {
+      return Array.from(document.querySelectorAll('.machine-name'))
+                  .map(i => i.value.trim())
+                  .filter(v => v);
+    }
+    function getMachineTypes() {
+  const rows = document.querySelectorAll('#machines-list .form-row');
+  return Array.from(rows).map(row => {
+    const name = row.querySelector('.machine-name')?.value.trim();
+    const count = parseInt(row.querySelector('.machine-count')?.value) || 1;
+
+    const opsSelect = row.querySelector('.machine-ops');
+    let ops = [];
+
+    if (opsSelect && opsSelect.choices) {
+      // This works only if you explicitly attach Choices instance manually
+      const instance = Choices.instances.find(c => c.passedElement.element === opsSelect);
+      if (instance) {
+        ops = instance.getValue(true);  // ✅ gets selected values as array
+      }
+    } else {
+      // fallback for native select (in case Choices is not initialized)
+      ops = Array.from(opsSelect?.selectedOptions || []).map(opt => opt.value);
+    }
+
+    return { name, count, operations: ops };
+  }).filter(mt => mt.name);
+}
+
+
+
+    function getProducts() {
+  return Array.from(document.querySelectorAll('#products-list .item-card')).map(card => {
+    const name = card.querySelector('.product-name').value.trim();
+    const tasks = Array.from(card.querySelectorAll('.task-item')).map(task => {
+      const op = task.querySelector('.task-operation').value;
+      const dur = parseInt(task.querySelector('.task-duration').value) || 0;
+      return [op, dur];
+    });
+    return { name, tasks };
+  }).filter(p => p.name);
+}
+
+
+    function getSetupTimes() {
+      const tbl = {};
+      document.querySelectorAll('.matrix-input').forEach(i => {
+        const from = i.dataset.from, to = i.dataset.to, v = parseInt(i.value) || 0;
+        tbl[from] = tbl[from] || {};
+        tbl[from][to] = v;
+      });
+      return tbl;
+    }
+
+    function getOrders() {
+      return Array.from(document.querySelectorAll('#orders-list .item-card')).map((div, idx) => {
+        const qtys = {};
+        getProducts().forEach(p => {
+          const inp = div.querySelector(`input[data-order="${idx}"][data-product="${p.name}"]`);
+          if (inp) {
+            const q = parseInt(inp.value) || 0;
+            if (q > 0) qtys[p.name] = q;
+          }
+        });
+        const dl = div.querySelector('.order-deadline');
+        return { quantities: qtys, deadline: dl ? dl.value : '' };
+      });
+    }
+
+    document.getElementById('run').addEventListener('click', async () => {
+      const btn = document.getElementById('run');
+      const orig = btn.innerHTML;
+      btn.innerHTML = 'Running...';
+      btn.disabled = true;
+      try {
+        const payload = {
+          machine_types: getMachineTypes(),
+          operations: getOperations(),
+
+          product_tasks: Object.fromEntries(getProducts().map(p => [p.name, p.tasks])),
+          setup_times: getSetupTimes(),
+          orders: getOrders(),
+          start_datetime: document.getElementById('start-datetime').value
+        };
+        const res = await fetch('/api/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        renderResults(data);
+      } catch (error) {
+        console.error('Error running scheduler:', error);
+      } finally {
+        btn.innerHTML = orig;
+        btn.disabled = false;
+      }
+    });
+
+    function renderResults(data) {
+  const resultsSection = document.getElementById('results-section');
+  const out = document.getElementById('output');
+  out.innerHTML = '';
+
+  // ✅ Guard against undefined/null input
+  if (!data || typeof data !== 'object') {
+    alert('Error: Scheduler returned invalid data.');
+    console.error('renderResults received:', data);
+    return;
+  }
+
+  // ✅ Guard against missing machine_schedule
+  if (!data.machine_schedule || typeof data.machine_schedule !== 'object') {
+    alert('Error: Missing machine schedule in response.');
+    console.error('Missing machine_schedule in result:', data);
+    return;
+  }
+
+  // ✅ Guard against missing orders_summary
+  if (!Array.isArray(data.orders_summary)) {
+    alert('Error: Missing orders summary in response.');
+    console.error('Missing orders_summary in result:', data);
+    return;
+  }
+
+  // ✅ Utilization
+  if (data.utilization_score !== undefined) {
+    document.getElementById('utilization-score').innerText =
+      'Utilization Score: ' + data.utilization_score + ' / 10';
+    document.getElementById('utilization-card').style.display = 'block';
+  }
+
+  // ✅ Optimality
+  if (data.optimality) {
+    document.getElementById('optimality-card').style.display = 'block';
+    document.getElementById('solver-status').innerText =
+      'Status: ' + data.optimality.status;
+    document.getElementById('objective-value').innerText =
+      'Objective Value: ' + data.optimality.objective;
+    document.getElementById('lower-bound').innerText =
+      'Lower Bound: ' + data.optimality.lower_bound;
+    document.getElementById('optimality-gap').innerText =
+      'Optimality Gap: ' + data.optimality.gap + '%';
+  }
+
+  // ✅ Machine Schedules
+  const machineCard = document.createElement('div');
+  machineCard.className = 'card';
+  machineCard.innerHTML = `
+    <div class="card-header">
+      <div class="card-title">Machine Schedules</div>
+      <div class="card-description">Detailed timeline for each machine</div>
+    </div>
+    <div class="card-content" id="machine-schedules"></div>
+  `;
+  const machineContent = machineCard.querySelector('#machine-schedules');
+  Object.entries(data.machine_schedule).forEach(([machine, schedule]) => {
+    const machineDiv = document.createElement('div');
+    machineDiv.className = 'mb-1';
+    const title = document.createElement('h4');
+    title.className = 'font-semibold mb-1';
+    title.style.fontSize = '0.75rem';
+    title.textContent = machine;
+    machineDiv.appendChild(title);
+
+    if (!schedule.length) {
+      const noTasks = document.createElement('p');
+      noTasks.textContent = 'No tasks scheduled';
+      noTasks.style.color = '#64748b';
+      noTasks.style.fontStyle = 'italic';
+      noTasks.style.fontSize = '0.7rem';
+      machineDiv.appendChild(noTasks);
+    } else {
+      const tableContainer = document.createElement('div');
+      tableContainer.className = 'table-container';
+      tableContainer.innerHTML = `
+        <table class="table">
+  <thead>
+    <tr>
+      <th>Order</th>
+      <th>Product</th>
+      <th>Task</th>
+      <th>Operation</th>
+      <th>Start</th>
+      <th>End</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${schedule.map(seg => `
+      <tr>
+        <td class="font-medium">${seg.order}</td>
+        <td>${seg.product}</td>
+        <td>${seg.task_index}</td>
+        <td>${seg.operation || '-'}</td>
+        <td>${seg.start}</td>
+        <td>${seg.end}</td>
+      </tr>
+    `).join('')}
+  </tbody>
+</table>
+
+      `;
+      machineDiv.appendChild(tableContainer);
+    }
+    machineContent.appendChild(machineDiv);
+  });
+
+  // ✅ Order Summary
+  const orderCard = document.createElement('div');
+  orderCard.className = 'card';
+  orderCard.innerHTML = `
+    <div class="card-header">
+      <div class="card-title">Order Summary</div>
+      <div class="card-description">Completion status and deadline analysis</div>
+    </div>
+    <div class="card-content">
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Order</th><th>Finished</th><th>Deadline</th><th>Status</th><th>Hours Overdue</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.orders_summary.map(order => `
+              <tr>
+                <td class="font-medium">${order.order}</td>
+                <td>${order.finished}</td>
+                <td>${order.deadline}</td>
+                <td>
+                  <span class="badge ${order.status === 'On Time' ? 'badge-success' : 'badge-danger'}">
+                    ${order.status}
+                  </span>
+                </td>
+                <td class="${order.hours_overdue > 0 ? 'text-danger font-medium' : 'text-success'}">
+                  ${order.hours_overdue}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  out.appendChild(machineCard);
+  out.appendChild(orderCard);
+  resultsSection.style.display = 'block';
+}
+
+
+    // Demo Data
+    document.getElementById('demo').addEventListener('click', () => {
+        document.getElementById('num-operations').value = 2;
+        renderOperations();
+        document.querySelectorAll('.operation-name')[0].value = 'Cutting';
+        document.querySelectorAll('.operation-name')[1].value = 'Assembling';
+
+        document.getElementById('num-machines').value = 2;
+        renderMachines.call(document.getElementById('num-machines'));
+        const machineRows = document.querySelectorAll('#machines-list .form-row');
+        
+        // Machine 1
+        const machineRow1 = machineRows[0];
+        machineRow1.querySelector('.machine-name').value = 'Cutter';
+        machineRow1.querySelector('.machine-count').value = 2;
+        const select1 = machineRow1.querySelector('.machine-ops');
+        if (select1 && select1.choices) {
+            select1.choices.setValue(['Cutting']);
+        }
+
+        // Machine 2
+        const machineRow2 = machineRows[1];
+        machineRow2.querySelector('.machine-name').value = 'Assembler';
+        machineRow2.querySelector('.machine-count').value = 3;
+        const select2 = machineRow2.querySelector('.machine-ops');
+        if (select2 && select2.choices) {
+            select2.choices.setValue(['Assembling']);
+        }
+
+        document.getElementById('num-products').value = 2;
+        renderProducts();
+        const productCards = document.querySelectorAll('#products-list .item-card');
+        
+        // Product 1
+        productCards[0].querySelector('.product-name').value = 'Chair';
+        productCards[0].querySelector('.num-tasks').value = 2;
+        renderTasks(productCards[0]);
+        let tasks = productCards[0].querySelectorAll('.task-item');
+        tasks[0].querySelector('.task-operation').value = 'Cutting';
+        tasks[0].querySelector('.task-duration').value = 2;
+        tasks[1].querySelector('.task-operation').value = 'Assembling';
+        tasks[1].querySelector('.task-duration').value = 3;
+
+        // Product 2
+        productCards[1].querySelector('.product-name').value = 'Table';
+        productCards[1].querySelector('.num-tasks').value = 2;
+        renderTasks(productCards[1]);
+        tasks = productCards[1].querySelectorAll('.task-item');
+        tasks[0].querySelector('.task-operation').value = 'Cutting';
+        tasks[0].querySelector('.task-duration').value = 4;
+        tasks[1].querySelector('.task-operation').value = 'Assembling';
+        tasks[1].querySelector('.task-duration').value = 5;
+
+        renderSetupMatrix();
+        document.querySelectorAll('.matrix-input').forEach(i => i.value = 1);
+
+        document.getElementById('num-orders').value = 2;
+        renderOrders();
+        const orderCards = document.querySelectorAll('#orders-list .item-card');
+        orderCards[0].querySelector('input[data-product="Chair"]').value = 5;
+        orderCards[0].querySelector('input[data-product="Table"]').value = 2;
+        let dl = new Date(Date.now() + 5 * 86400000); // 5 days from now
+        orderCards[0].querySelector('.order-deadline').value = dl.toISOString().slice(0, 16);
+
+        orderCards[1].querySelector('input[data-product="Chair"]').value = 3;
+        orderCards[1].querySelector('input[data-product="Table"]').value = 6;
+        dl = new Date(Date.now() + 10 * 86400000); // 10 days from now
+        orderCards[1].querySelector('.order-deadline').value = dl.toISOString().slice(0, 16);
+
+        document.getElementById('start-datetime').value = new Date().toISOString().slice(0,16);
+    });
+
+    // --- START: FIXED SAVE/LOAD LOGIC ---
+    document.getElementById('save-draft').addEventListener('click', () => {
+      const payload = {
+        // Add counts to save the exact UI state
+        counts: {
+            operations: document.getElementById('num-operations').value,
+            machines: document.getElementById('num-machines').value,
+            products: document.getElementById('num-products').value,
+            orders: document.getElementById('num-orders').value,
+        },
+        // Keep the rest of the data for the scheduler
+        operations: getOperations(),
+        machine_types: getMachineTypes(),
+        product_tasks: Object.fromEntries(getProducts().map(p => [p.name, p.tasks])),
+        setup_times: getSetupTimes(),
+        orders: getOrders(),
+        start_datetime: document.getElementById('start-datetime').value
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'scheduler-draft.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('load-draft').addEventListener('click', () => {
+      document.getElementById('file-input').click();
+    });
+
+    document.getElementById('file-input').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          // Check for the new structure, fallback to old for compatibility
+          if (data.counts && data.operations) {
+              loadDraft(data);
+          } else {
+              alert('The JSON file has an outdated format.');
+          }
+        } catch {
+          alert('Invalid JSON file.');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = ''; // Reset file input
+    });
+
+    function loadDraft(data) {
+      // The order of operations is critical here.
+      // 1. Set counts and render the containers.
+      // 2. Populate the data into the newly created elements.
+
+      // Operations
+      document.getElementById('num-operations').value = data.counts.operations || 0;
+      renderOperations();
+      const opInputs = document.querySelectorAll('.operation-name');
+      data.operations.forEach((opName, i) => {
+          if(opInputs[i]) opInputs[i].value = opName;
+      });
+
+      // Machine Types
+      document.getElementById('num-machines').value = data.counts.machines || 0;
+      renderMachines.call(document.getElementById('num-machines'));
+      const machineRows = document.querySelectorAll('#machines-list .form-row');
+      data.machine_types.forEach((mt, i) => {
+          const row = machineRows[i];
+          if (row) {
+              row.querySelector('.machine-name').value = mt.name;
+              row.querySelector('.machine-count').value = mt.count;
+              const selectEl = row.querySelector('.machine-ops');
+              if (selectEl) {
+  const instance = Choices.instances.find(c => c.passedElement.element === selectEl);
+  if (instance) {
+    instance.setValue(mt.operations.map(v => ({ value: v, label: v })));
+  }
+}
+
+          }
+      });
+
+      // Products & Tasks
+      document.getElementById('num-products').value = data.counts.products || 0;
+      renderProducts();
+      const productCards = document.querySelectorAll('#products-list .item-card');
+      const productData = getProducts(); // Get names to iterate in order
+      productData.forEach((p, i) => {
+          const card = productCards[i];
+          if (card && data.product_tasks[p.name]) {
+              const tasks = data.product_tasks[p.name];
+              card.querySelector('.product-name').value = p.name; // Already set by getProducts
+              card.querySelector('.num-tasks').value = tasks.length;
+              renderTasks(card);
+              const taskItems = card.querySelectorAll('.task-item');
+              tasks.forEach((task, j) => {
+                  if (taskItems[j]) {
+                      taskItems[j].querySelector('.task-operation').value = task[0];
+                      taskItems[j].querySelector('.task-duration').value = task[1];
+                  }
+              });
+          }
+      });
+      
+      // Setup Times (must be after products are fully rendered)
+      renderSetupMatrix();
+      if (data.setup_times) {
+          for (const from in data.setup_times) {
+              for (const to in data.setup_times[from]) {
+                  const inp = document.querySelector(`.matrix-input[data-from="${from}"][data-to="${to}"]`);
+                  if (inp) inp.value = data.setup_times[from][to];
+              }
+          }
+      }
+
+      // Orders
+      document.getElementById('num-orders').value = data.counts.orders || 0;
+      renderOrders();
+      const orderCards = document.querySelectorAll('#orders-list .item-card');
+      data.orders.forEach((order, i) => {
+          const card = orderCards[i];
+          if (card) {
+              for (const [product, qty] of Object.entries(order.quantities)) {
+                  const qtyInput = card.querySelector(`input[data-product="${product}"]`);
+                  if (qtyInput) qtyInput.value = qty;
+              }
+              const deadlineInput = card.querySelector('.order-deadline');
+              if (deadlineInput && order.deadline) {
+                  deadlineInput.value = order.deadline.slice(0, 16);
+              }
+          }
+      });
+
+      // Start DateTime
+      if (data.start_datetime) {
+        document.getElementById('start-datetime').value = data.start_datetime.slice(0, 16);
+      }
+    }
+    // --- END: FIXED SAVE/LOAD LOGIC ---
+  </script>
+</body>
+</html>
