@@ -1,0 +1,128 @@
+{
+  "version": "1.0",
+  "counts": {
+    "operations": 7,
+    "machines": 6,
+    "products": 3,
+    "orders": 2
+  },
+  "operations": [
+    "TO DO",
+    "WIP",
+    "QA",
+    "Done",
+    "cutting",
+    "Assemble",
+    "Painting"
+  ],
+  "machine_types": [
+    {
+      "name": "Shoes Mass. Prod Line",
+      "count": 1,
+      "operations": [
+        "cutting"
+      ]
+    },
+    {
+      "name": "Shoes Lean Prod Line",
+      "count": 1,
+      "operations": [
+        "cutting"
+      ]
+    },
+    {
+      "name": "Shoes Modular Prod Line",
+      "count": 1,
+      "operations": [
+        "Assemble"
+      ]
+    },
+    {
+      "name": "GoGreen Prod Line",
+      "count": 1,
+      "operations": [
+        "Painting"
+      ]
+    },
+    {
+      "name": "Concept Prod Line",
+      "count": 1,
+      "operations": [
+        "QA"
+      ]
+    },
+    {
+      "name": "Craft Prod Line",
+      "count": 1,
+      "operations": [
+        "Done"
+      ]
+    }
+  ],
+  "product_tasks": {
+    "BLT-LTH-001": [
+      [
+        "cutting",
+        2
+      ],
+      [
+        "Assemble",
+        3
+      ],
+      [
+        "Painting",
+        1
+      ]
+    ],
+    "KID-SCL-001": [
+      [
+        "cutting",
+        1
+      ],
+      [
+        "QA",
+        1
+      ]
+    ],
+    "SPC-DNC-001": [
+      [
+        "Assemble",
+        2
+      ],
+      [
+        "Done",
+        1
+      ]
+    ]
+  },
+  "setup_times": {
+    "BLT-LTH-001": {
+      "KID-SCL-001": 0,
+      "SPC-DNC-001": 0
+    },
+    "KID-SCL-001": {
+      "BLT-LTH-001": 0,
+      "SPC-DNC-001": 0
+    },
+    "SPC-DNC-001": {
+      "BLT-LTH-001": 0,
+      "KID-SCL-001": 0
+    }
+  },
+  "orders": [
+    {
+      "quantities": {
+        "BLT-LTH-001": 2,
+        "SPC-DNC-001": 2
+      },
+      "deadline": "2025-07-14T07:44"
+    },
+    {
+      "quantities": {
+        "KID-SCL-001": 2
+      },
+      "deadline": "2025-07-13T07:44"
+    }
+  ],
+  "start_datetime": "2025-07-10T07:44"
+}
