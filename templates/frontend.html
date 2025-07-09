@@ -389,11 +389,13 @@
 <body>
   <div class="container" style="position:relative;">
     <!-- Draft Save/Load -->
-    <div class="draft-buttons">
-      <button id="save-draft" class="btn btn-outline">Save Draft</button>
-      <button id="load-draft" class="btn btn-outline">Load Draft</button>
-      <input type="file" id="file-input" style="display:none" accept=".json"/>
-    </div>
+   <div class="draft-buttons">
+  <button id="save-draft" class="btn btn-outline">Save Draft</button>
+  <button id="load-draft" class="btn btn-outline">Load Draft</button>
+  
+  <input type="file" id="file-input" style="display:none" accept=".json"/>
+  
+</div>
 
     <!-- Header -->
     <div class="header">
@@ -446,7 +448,7 @@
         <div id="operations-list"></div>
 
         <div class="form-row">
-          <label class="label">Number of machines:</label>
+          <label class="label">Number of machine types:</label>
           <input type="number" id="num-machines" min="1" class="input input-sm"/>
         </div>
         <div id="machines-list"></div>
@@ -594,637 +596,625 @@
 
   <script>
     // Helper function to set dropdown values
-function setDropdownValues(dropdown, values) {
-  if (!dropdown || !values || values.length === 0) return;
-  
-  console.log('Setting dropdown values:', values, 'for dropdown:', dropdown);
-  
-  const checkboxes = dropdown.querySelectorAll('.dropdown-item input[type="checkbox"]');
-  checkboxes.forEach(checkbox => {
-    checkbox.checked = values.includes(checkbox.value);
-  });
-  
-  // Manually trigger the update selection function
-  const placeholder = dropdown.querySelector('.dropdown-placeholder');
-  const selectedContainer = dropdown.querySelector('.dropdown-selected');
-  const checkedItems = dropdown.querySelectorAll('.dropdown-item input:checked');
-  
-  console.log('Found checked items:', checkedItems.length);
-  
-  if (checkedItems.length === 0) {
-    placeholder.style.display = 'block';
-    selectedContainer.style.display = 'none';
-  } else {
-    placeholder.style.display = 'none';
-    selectedContainer.style.display = 'flex';
-    
-    selectedContainer.innerHTML = '';
-    checkedItems.forEach(checkbox => {
-      const item = document.createElement('span');
-      item.className = 'selected-item';
-      item.innerHTML = `
-        ${checkbox.value}
-        <span class="remove-item" data-value="${checkbox.value}">×</span>
-      `;
-      selectedContainer.appendChild(item);
+    function setDropdownValues(dropdown, values) {
+      if (!dropdown || !values || values.length === 0) return;
       
-      // Handle remove
-      item.querySelector('.remove-item').addEventListener('click', (e) => {
-        e.stopPropagation();
-        checkbox.checked = false;
-        setDropdownValues(dropdown, Array.from(dropdown.querySelectorAll('.dropdown-item input:checked')).map(cb => cb.value));
+      console.log('Setting dropdown values:', values, 'for dropdown:', dropdown);
+      
+      const checkboxes = dropdown.querySelectorAll('.dropdown-item input[type="checkbox"]');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = values.includes(checkbox.value);
       });
-    });
-  }
-  
-  // Update dropdown item styles
-  dropdown.querySelectorAll('.dropdown-item').forEach(item => {
-    const checkbox = item.querySelector('input[type="checkbox"]');
-    if (checkbox.checked) {
-      item.classList.add('checked');
-    } else {
-      item.classList.remove('checked');
-    }
-  });
-  
-  console.log('Dropdown updated with selections:', Array.from(checkedItems).map(cb => cb.value));
-}
-
-function getOperations() {
-  return Array.from(document.querySelectorAll('.operation-name'))
-              .map(i => i.value.trim())
-              .filter(v => v);
-}
-
-function renderOperations() {
-  const count = parseInt(document.getElementById('num-operations').value) || 0;
-  const wrap = document.getElementById('operations-list');
-  wrap.innerHTML = '';
-  for (let i = 1; i <= count; i++) {
-    const div = document.createElement('div');
-    div.className = 'form-row';
-    div.innerHTML = `
-      <label class="label">Operation ${i}:</label>
-      <input type="text" class="input input-md operation-name" placeholder="e.g. Cutting or Assembling">
-    `;
-    wrap.appendChild(div);
-  }
-}
-
-document.getElementById('num-operations').addEventListener('change', renderOperations);
-
-// Initialize inputs
-document.getElementById('num-machines').addEventListener('change', renderMachines);
-document.getElementById('num-products').addEventListener('change', renderProducts);
-document.getElementById('num-orders').addEventListener('change', renderOrders);
-document.getElementById('start-datetime').value = new Date().toISOString().slice(0,16);
-
-function renderMachines() {
-  const count = parseInt(this.value) || 0;
-  const wrap = document.getElementById('machines-list');
-  wrap.innerHTML = '';
-  for (let i = 1; i <= count; i++) {
-    const div = document.createElement('div');
-    div.className = 'form-row';
-    const ops = getOperations();
-    div.innerHTML = `
-      <label class="label">Machine ${i}:</label>
-      <input type="text" class="input input-md machine-name" placeholder="Machine ${i}">
-     
-      <label class="label">Operations:</label>
-      <div class="operations-dropdown" data-machine="${i}">
-        <div class="dropdown-toggle">
-          <div class="dropdown-content">
-            <span class="dropdown-placeholder">Select operations</span>
-            <div class="dropdown-selected" style="display: none;"></div>
-          </div>
-          <span class="dropdown-arrow">▼</span>
-        </div>
-        <div class="dropdown-menu">
-          ${ops.map(op => `
-            <div class="dropdown-item" data-value="${op}">
-              <input type="checkbox" value="${op}">
-              <span>${op}</span>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-    wrap.appendChild(div);
-    
-    // Initialize dropdown functionality
-    initializeDropdown(div.querySelector('.operations-dropdown'));
-  }
-  renderProducts();
-}
-
-// Initialize custom dropdown functionality
-function initializeDropdown(dropdown) {
-  const toggle = dropdown.querySelector('.dropdown-toggle');
-  const menu = dropdown.querySelector('.dropdown-menu');
-  const placeholder = dropdown.querySelector('.dropdown-placeholder');
-  const selectedContainer = dropdown.querySelector('.dropdown-selected');
-  const items = dropdown.querySelectorAll('.dropdown-item');
-
-  // Toggle dropdown
-  toggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isOpen = menu.classList.contains('show');
-    
-    // Close all other dropdowns
-    document.querySelectorAll('.dropdown-menu.show').forEach(m => {
-      if (m !== menu) {
-        m.classList.remove('show');
-        m.parentElement.querySelector('.dropdown-toggle').classList.remove('active');
-      }
-    });
-    
-    if (isOpen) {
-      menu.classList.remove('show');
-      toggle.classList.remove('active');
-    } else {
-      menu.classList.add('show');
-      toggle.classList.add('active');
-    }
-  });
-
-  // Handle item selection
-  items.forEach(item => {
-    const checkbox = item.querySelector('input[type="checkbox"]');
-    
-    item.addEventListener('click', (e) => {
-      e.stopPropagation();
-      checkbox.checked = !checkbox.checked;
-      updateSelection();
-    });
-    
-    checkbox.addEventListener('change', updateSelection);
-  });
-
-  function updateSelection() {
-    const checkedItems = dropdown.querySelectorAll('.dropdown-item input:checked');
-    
-    if (checkedItems.length === 0) {
-      placeholder.style.display = 'block';
-      selectedContainer.style.display = 'none';
-    } else {
-      placeholder.style.display = 'none';
-      selectedContainer.style.display = 'flex';
       
-      selectedContainer.innerHTML = '';
-      checkedItems.forEach(checkbox => {
-        const item = document.createElement('span');
-        item.className = 'selected-item';
-        item.innerHTML = `
-          ${checkbox.value}
-          <span class="remove-item" data-value="${checkbox.value}">×</span>
-        `;
-        selectedContainer.appendChild(item);
+      // Manually trigger the update selection function
+      const placeholder = dropdown.querySelector('.dropdown-placeholder');
+      const selectedContainer = dropdown.querySelector('.dropdown-selected');
+      const checkedItems = dropdown.querySelectorAll('.dropdown-item input:checked');
+      
+      console.log('Found checked items:', checkedItems.length);
+      
+      if (checkedItems.length === 0) {
+        placeholder.style.display = 'block';
+        selectedContainer.style.display = 'none';
+      } else {
+        placeholder.style.display = 'none';
+        selectedContainer.style.display = 'flex';
         
-        // Handle remove
-        item.querySelector('.remove-item').addEventListener('click', (e) => {
+        selectedContainer.innerHTML = '';
+        checkedItems.forEach(checkbox => {
+          const item = document.createElement('span');
+          item.className = 'selected-item';
+          item.innerHTML = `
+            ${checkbox.value}
+            <span class="remove-item" data-value="${checkbox.value}">×</span>
+          `;
+          selectedContainer.appendChild(item);
+          
+          // Handle remove
+          item.querySelector('.remove-item').addEventListener('click', (e) => {
+            e.stopPropagation();
+            checkbox.checked = false;
+            setDropdownValues(dropdown, Array.from(dropdown.querySelectorAll('.dropdown-item input:checked')).map(cb => cb.value));
+          });
+        });
+      }
+      
+      // Update dropdown item styles
+      dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (checkbox.checked) {
+          item.classList.add('checked');
+        } else {
+          item.classList.remove('checked');
+        }
+      });
+      
+      console.log('Dropdown updated with selections:', Array.from(checkedItems).map(cb => cb.value));
+    }
+
+    function getOperations() {
+      return Array.from(document.querySelectorAll('.operation-name'))
+                  .map(i => i.value.trim())
+                  .filter(v => v);
+    }
+
+    function renderOperations() {
+      const count = parseInt(document.getElementById('num-operations').value) || 0;
+      const wrap = document.getElementById('operations-list');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= count; i++) {
+        const div = document.createElement('div');
+        div.className = 'form-row';
+        div.innerHTML = `
+          <label class="label">Operation ${i}:</label>
+          <input type="text" class="input input-md operation-name" placeholder="e.g. Cutting or Assembling">
+        `;
+        wrap.appendChild(div);
+      }
+    }
+
+    document.getElementById('num-operations').addEventListener('change', renderOperations);
+
+    // Initialize inputs
+    document.getElementById('num-machines').addEventListener('change', renderMachines);
+    document.getElementById('num-products').addEventListener('change', renderProducts);
+    document.getElementById('num-orders').addEventListener('change', renderOrders);
+    document.getElementById('start-datetime').value = new Date().toISOString().slice(0,16);
+
+    function renderMachines() {
+      const count = parseInt(this.value) || 0;
+      const wrap = document.getElementById('machines-list');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= count; i++) {
+        const div = document.createElement('div');
+        div.className = 'form-row';
+        const ops = getOperations();
+        div.innerHTML = `
+          <label class="label">Machine ${i}:</label>
+          <input type="text" class="input input-md machine-name" placeholder="Machine ${i}">
+          <label class="label">Count:</label>
+          <input type="number" class="input input-sm machine-count" min="1" value="1">
+          <label class="label">Operations:</label>
+          <div class="operations-dropdown" data-machine="${i}">
+            <div class="dropdown-toggle">
+              <div class="dropdown-content">
+                <span class="dropdown-placeholder">Select operations</span>
+                <div class="dropdown-selected" style="display: none;"></div>
+              </div>
+              <span class="dropdown-arrow">▼</span>
+            </div>
+            <div class="dropdown-menu">
+              ${ops.map(op => `
+                <div class="dropdown-item" data-value="${op}">
+                  <input type="checkbox" value="${op}">
+                  <span>${op}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        wrap.appendChild(div);
+        
+        // Initialize dropdown functionality
+        initializeDropdown(div.querySelector('.operations-dropdown'));
+      }
+      renderProducts();
+    }
+
+    // Initialize custom dropdown functionality
+    function initializeDropdown(dropdown) {
+      const toggle = dropdown.querySelector('.dropdown-toggle');
+      const menu = dropdown.querySelector('.dropdown-menu');
+      const placeholder = dropdown.querySelector('.dropdown-placeholder');
+      const selectedContainer = dropdown.querySelector('.dropdown-selected');
+      const items = dropdown.querySelectorAll('.dropdown-item');
+
+      // Toggle dropdown
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = menu.classList.contains('show');
+        
+        // Close all other dropdowns
+        document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+          if (m !== menu) {
+            m.classList.remove('show');
+            m.parentElement.querySelector('.dropdown-toggle').classList.remove('active');
+          }
+        });
+        
+        if (isOpen) {
+          menu.classList.remove('show');
+          toggle.classList.remove('active');
+        } else {
+          menu.classList.add('show');
+          toggle.classList.add('active');
+        }
+      });
+
+      // Handle item selection
+      items.forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        
+        item.addEventListener('click', (e) => {
           e.stopPropagation();
-          checkbox.checked = false;
+          checkbox.checked = !checkbox.checked;
           updateSelection();
         });
+        
+        checkbox.addEventListener('change', updateSelection);
       });
+
+      function updateSelection() {
+        const checkedItems = dropdown.querySelectorAll('.dropdown-item input:checked');
+        
+        if (checkedItems.length === 0) {
+          placeholder.style.display = 'block';
+          selectedContainer.style.display = 'none';
+        } else {
+          placeholder.style.display = 'none';
+          selectedContainer.style.display = 'flex';
+          
+          selectedContainer.innerHTML = '';
+          checkedItems.forEach(checkbox => {
+            const item = document.createElement('span');
+            item.className = 'selected-item';
+            item.innerHTML = `
+              ${checkbox.value}
+              <span class="remove-item" data-value="${checkbox.value}">×</span>
+            `;
+            selectedContainer.appendChild(item);
+            
+            // Handle remove
+            item.querySelector('.remove-item').addEventListener('click', (e) => {
+              e.stopPropagation();
+              checkbox.checked = false;
+              updateSelection();
+            });
+          });
+        }
+        
+        // Update dropdown item styles
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+          const checkbox = item.querySelector('input[type="checkbox"]');
+          if (checkbox.checked) {
+            item.classList.add('checked');
+          } else {
+            item.classList.remove('checked');
+          }
+        });
+      }
     }
-    
-    // Update dropdown item styles
-    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
-      const checkbox = item.querySelector('input[type="checkbox"]');
-      if (checkbox.checked) {
-        item.classList.add('checked');
-      } else {
-        item.classList.remove('checked');
-      }
-    });
-  }
-}
 
-// Close dropdowns when clicking outside
-document.addEventListener('click', () => {
-  document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-    menu.classList.remove('show');
-    menu.parentElement.querySelector('.dropdown-toggle').classList.remove('active');
-  });
-});
-
-function renderProducts() {
-  const count = parseInt(document.getElementById('num-products').value) || 0;
-  const wrap = document.getElementById('products-list');
-  wrap.innerHTML = '';
-  for (let i = 1; i <= count; i++) {
-    const div = document.createElement('div');
-    div.className = 'item-card';
-    div.innerHTML = `
-      <div class="form-row">
-        <label class="label">Product ${i} name:</label>
-        <input type="text" class="input input-md product-name" placeholder="Product ${i}">
-        <label class="label">Tasks:</label>
-        <input type="number" class="input input-sm num-tasks" min="1" placeholder="0">
-      </div>
-      <div class="tasks-container"></div>
-    `;
-    wrap.appendChild(div);
-    div.querySelector('.num-tasks').addEventListener('change', () => renderTasks(div));
-  }
-  renderSetupMatrix();
-}
-
-function renderTasks(prodDiv) {
-  const cnt = parseInt(prodDiv.querySelector('.num-tasks').value) || 0;
-  const taskWrap = prodDiv.querySelector('.tasks-container');
-  taskWrap.innerHTML = '';
-  for (let t = 1; t <= cnt; t++) {
-    const td = document.createElement('div');
-    td.className = 'task-item';
-    td.innerHTML = `
-      <label class="label">Task ${t}:</label>
-      <select class="task-operation">
-        ${getOperations().map(op => `<option value="${op}">${op}</option>`).join('')}
-      </select>
-      <label class="label">Duration:</label>
-      <input type="number" class="input input-sm task-duration" min="1" placeholder="hrs">
-      <span class="label">hrs</span>
-    `;
-    taskWrap.appendChild(td);
-  }
-  renderSetupMatrix();
-}
-
-function renderSetupMatrix() {
-  const products = getProducts();
-  const wrap = document.getElementById('setup-matrix');
-  if (products.length < 2) {
-    wrap.innerHTML = '<p class="text-center" style="color:#64748b;font-style:italic;font-size:0.7rem;">Add at least 2 products to configure setup times</p>';
-    return;
-  }
-  let html = `
-    <div class="setup-matrix">
-      <table class="matrix-table">
-        <thead>
-          <tr>
-            <th>From \\ To</th>
-            ${products.map(p => `<th>${p.name}</th>`).join('')}
-          </tr>
-        </thead>
-        <tbody>
-  `;
-  products.forEach(p1 => {
-    html += `<tr><td class="row-header">${p1.name}</td>`;
-    products.forEach(p2 => {
-      if (p1.name === p2.name) {
-        html += '<td style="background:#f1f5f9;">-</td>';
-      } else {
-        html += `<td><input type="number" class="matrix-input" min="0" value="0" data-from="${p1.name}" data-to="${p2.name}"></td>`;
-      }
-    });
-    html += '</tr>';
-  });
-  html += '</tbody></table></div>';
-  wrap.innerHTML = html;
-}
-
-function renderOrders() {
-  const cnt = parseInt(document.getElementById('num-orders').value) || 0;
-  const wrap = document.getElementById('orders-list');
-  wrap.innerHTML = '';
-  const prods = getProducts();
-  for (let i = 1; i <= cnt; i++) {
-    const div = document.createElement('div');
-    div.className = 'item-card';
-    let html = `<h4 class="font-semibold mb-1" style="font-size:0.75rem;">Order ${i}</h4>`;
-    prods.forEach(p => {
-      html += `
-        <div class="form-row">
-          <label class="label">${p.name} qty:</label>
-          <input type="number" class="input input-sm" data-order="${i-1}" data-product="${p.name}" min="0" value="0">
-        </div>`;
-    });
-    html += `
-      <div class="form-row">
-        <label class="label">Deadline:</label>
-        <input type="datetime-local" class="input input-lg order-deadline">
-      </div>`;
-    div.innerHTML = html;
-    wrap.appendChild(div);
-  }
-}
-
-function getMachineNames() {
-  return Array.from(document.querySelectorAll('.machine-name'))
-              .map(i => i.value.trim())
-              .filter(v => v);
-}
-
-// FIXED: Function to extract machine-operation mapping
-function getMachinesWithOperations() {
-  const rows = document.querySelectorAll('#machines-list .form-row');
-  const result = {};
-  
-  Array.from(rows).forEach(row => {
-    const name = row.querySelector('.machine-name')?.value.trim();
-    if (!name) return;
-    
-    const dropdown = row.querySelector('.operations-dropdown');
-    const checkedBoxes = dropdown ? dropdown.querySelectorAll('.dropdown-item input:checked') : [];
-    const operations = Array.from(checkedBoxes).map(cb => cb.value);
-    
-    // For each operation this machine can do, add the machine to that operation's list
-    operations.forEach(op => {
-      if (!result[op]) result[op] = [];
-      result[op].push(name);
-    });
-  });
-  
-  console.log('Machine-Operation mapping:', result);
-  return result;
-}
-
-function getMachineTypes() {
-  const rows = document.querySelectorAll('#machines-list .form-row');
-  const result = Array.from(rows).map(row => {
-    const name = row.querySelector('.machine-name')?.value.trim();
-    const dropdown = row.querySelector('.operations-dropdown');
-    const checkedBoxes = dropdown ? dropdown.querySelectorAll('.dropdown-item input:checked') : [];
-    const operations = Array.from(checkedBoxes).map(cb => cb.value);
-    
-    const machineType = { name, operations };
-
-    console.log('Machine type:', machineType);
-    return machineType;
-  }).filter(mt => mt.name);
-  
-  console.log('All machine types:', result);
-  return result;
-}
-
-function getProducts() {
-  return Array.from(document.querySelectorAll('#products-list .item-card')).map(card => {
-    const name = card.querySelector('.product-name').value.trim();
-    const tasks = Array.from(card.querySelectorAll('.task-item')).map(task => {
-      const op = task.querySelector('.task-operation').value;
-      const dur = parseInt(task.querySelector('.task-duration').value) || 0;
-      return [op, dur];
-    });
-    return { name, tasks };
-  }).filter(p => p.name);
-}
-
-function getSetupTimes() {
-  const tbl = {};
-  document.querySelectorAll('.matrix-input').forEach(i => {
-    const from = i.dataset.from, to = i.dataset.to, v = parseInt(i.value) || 0;
-    tbl[from] = tbl[from] || {};
-    tbl[from][to] = v;
-  });
-  return tbl;
-}
-
-function getOrders() {
-  return Array.from(document.querySelectorAll('#orders-list .item-card')).map((div, idx) => {
-    const qtys = {};
-    getProducts().forEach(p => {
-      const inp = div.querySelector(`input[data-order="${idx}"][data-product="${p.name}"]`);
-      if (inp) {
-        const q = parseInt(inp.value) || 0;
-        if (q > 0) qtys[p.name] = q;
-      }
-    });
-    const dl = div.querySelector('.order-deadline');
-    return { quantities: qtys, deadline: dl ? dl.value : '' };
-  });
-}
-
-document.getElementById('run').addEventListener('click', async () => {
-  const btn = document.getElementById('run');
-  const orig = btn.innerHTML;
-  btn.innerHTML = 'Running...';
-  btn.disabled = true;
-  try {
-    // FIXED: Create payload that matches backend expectations
-    const machineOperationMap = getMachinesWithOperations();
-    const machines = getMachineNames();
-    
-    // Convert product tasks to match backend format
-    const products = getProducts();
-    const productTasks = {};
-    products.forEach(p => {
-      productTasks[p.name] = p.tasks.map(task => {
-        const [operation, duration] = task;
-        // Find a machine that can do this operation
-        const availableMachines = machineOperationMap[operation] || [];
-        const machine = availableMachines[0] || operation; // fallback to operation name if no machine found
-        return [machine, duration];
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+        menu.classList.remove('show');
+        menu.parentElement.querySelector('.dropdown-toggle').classList.remove('active');
       });
     });
-    
-    const payload = {
-      machines: machines, // Backend expects 'machines' array
-      product_tasks: productTasks, // Updated format
-      setup_times: getSetupTimes(),
-      orders: getOrders(),
-      start_datetime: document.getElementById('start-datetime').value
-    };
-    
-    console.log('Sending payload to scheduler:', payload);
-    
-    // Enhanced validation with detailed logging
-    console.log('Validating payload:', payload);
 
-    if (!payload.machines || payload.machines.length === 0) {
-      alert('Error: No machines configured. Please add at least one machine.');
-      return;
+    function renderProducts() {
+      const count = parseInt(document.getElementById('num-products').value) || 0;
+      const wrap = document.getElementById('products-list');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= count; i++) {
+        const div = document.createElement('div');
+        div.className = 'item-card';
+        div.innerHTML = `
+          <div class="form-row">
+            <label class="label">Product ${i} name:</label>
+            <input type="text" class="input input-md product-name" placeholder="Product ${i}">
+            <label class="label">Tasks:</label>
+            <input type="number" class="input input-sm num-tasks" min="1" placeholder="0">
+          </div>
+          <div class="tasks-container"></div>
+        `;
+        wrap.appendChild(div);
+        div.querySelector('.num-tasks').addEventListener('change', () => renderTasks(div));
+      }
+      renderSetupMatrix();
     }
 
-    const hasValidProducts = Object.keys(payload.product_tasks).length > 0;
-    if (!hasValidProducts) {
-      alert('Error: No products configured. Please add at least one product.');
-      return;
+    function renderTasks(prodDiv) {
+      const cnt = parseInt(prodDiv.querySelector('.num-tasks').value) || 0;
+      const taskWrap = prodDiv.querySelector('.tasks-container');
+      taskWrap.innerHTML = '';
+      for (let t = 1; t <= cnt; t++) {
+        const td = document.createElement('div');
+        td.className = 'task-item';
+        td.innerHTML = `
+          <label class="label">Task ${t}:</label>
+          <select class="task-operation">
+            ${getOperations().map(op => `<option value="${op}">${op}</option>`).join('')}
+          </select>
+          <label class="label">Duration:</label>
+          <input type="number" class="input input-sm task-duration" min="1" placeholder="hrs">
+          <span class="label">hrs</span>
+        `;
+        taskWrap.appendChild(td);
+      }
+      renderSetupMatrix();
     }
 
-    // Check if at least one order has some quantities
-    const hasAnyOrders = payload.orders.length > 0;
-    if (!hasAnyOrders) {
-      alert('Error: No orders found. Please add at least one order.');
-      return;
-    }
-
-    console.log('Validation passed - sending to backend');
-    
-    const res = await fetch('/api/schedule', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    // Check if response is OK and content type is JSON
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`Server error ${res.status}: ${errorText}`);
-    }
-
-    const contentType = res.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const errorText = await res.text();
-      throw new Error(`Expected JSON but got ${contentType}. Response: ${errorText.substring(0, 200)}...`);
-    }
-
-    const data = await res.json();
-    console.log('Received response:', data);
-    renderResults(data);
-  } catch (error) {
-    console.error('Error running scheduler:', error);
-    alert('Error running scheduler: ' + error.message);
-  } finally {
-    btn.innerHTML = orig;
-    btn.disabled = false;
-  }
-});
-
-function renderResults(data) {
-  const resultsSection = document.getElementById('results-section');
-  const out = document.getElementById('output');
-  out.innerHTML = '';
-
-  if (!data || typeof data !== 'object') {
-    alert('Error: Scheduler returned invalid data.');
-    console.error('renderResults received:', data);
-    return;
-  }
-
-  if (!data.machine_schedule || typeof data.machine_schedule !== 'object') {
-    alert('Error: Missing machine schedule in response.');
-    console.error('Missing machine_schedule in result:', data);
-    return;
-  }
-
-  if (!Array.isArray(data.orders_summary)) {
-    alert('Error: Missing orders summary in response.');
-    console.error('Missing orders_summary in result:', data);
-    return;
-  }
-
-  if (data.utilization_score !== undefined) {
-    document.getElementById('utilization-score').innerText =
-      'Utilization Score: ' + data.utilization_score + ' / 10';
-    document.getElementById('utilization-card').style.display = 'block';
-  }
-
-  if (data.optimality) {
-    document.getElementById('optimality-card').style.display = 'block';
-    document.getElementById('solver-status').innerText =
-      'Status: ' + data.optimality.status;
-    document.getElementById('objective-value').innerText =
-      'Objective Value: ' + data.optimality.objective;
-    document.getElementById('lower-bound').innerText =
-      'Lower Bound: ' + data.optimality.lower_bound;
-    document.getElementById('optimality-gap').innerText =
-      'Optimality Gap: ' + data.optimality.gap + '%';
-  }
-
-  const machineCard = document.createElement('div');
-  machineCard.className = 'card';
-  machineCard.innerHTML = `
-    <div class="card-header">
-      <div class="card-title">Machine Schedules</div>
-      <div class="card-description">Detailed timeline for each machine</div>
-    </div>
-    <div class="card-content" id="machine-schedules"></div>
-  `;
-  const machineContent = machineCard.querySelector('#machine-schedules');
-  Object.entries(data.machine_schedule).forEach(([machine, schedule]) => {
-    const machineDiv = document.createElement('div');
-    machineDiv.className = 'mb-1';
-    const title = document.createElement('h4');
-    title.className = 'font-semibold mb-1';
-    title.style.fontSize = '0.75rem';
-    title.textContent = machine;
-    machineDiv.appendChild(title);
-
-    if (!schedule.length) {
-      const noTasks = document.createElement('p');
-      noTasks.textContent = 'No tasks scheduled';
-      noTasks.style.color = '#64748b';
-      noTasks.style.fontStyle = 'italic';
-      noTasks.style.fontSize = '0.7rem';
-      machineDiv.appendChild(noTasks);
-    } else {
-      const tableContainer = document.createElement('div');
-      tableContainer.className = 'table-container';
-      tableContainer.innerHTML = `
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Order</th>
-              <th>Product</th>
-              <th>Task</th>
-              <th>Operation</th>
-              <th>Start</th>
-              <th>End</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${schedule.map(seg => `
+    function renderSetupMatrix() {
+      const products = getProducts();
+      const wrap = document.getElementById('setup-matrix');
+      if (products.length < 2) {
+        wrap.innerHTML = '<p class="text-center" style="color:#64748b;font-style:italic;font-size:0.7rem;">Add at least 2 products to configure setup times</p>';
+        return;
+      }
+      let html = `
+        <div class="setup-matrix">
+          <table class="matrix-table">
+            <thead>
               <tr>
-                <td class="font-medium">${seg.order}</td>
-                <td>${seg.product}</td>
-                <td>${seg.task_index}</td>
-                <td>${seg.operation || '-'}</td>
-                <td>${seg.start}</td>
-                <td>${seg.end}</td>
+                <th>From \\ To</th>
+                ${products.map(p => `<th>${p.name}</th>`).join('')}
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
       `;
-      machineDiv.appendChild(tableContainer);
+      products.forEach(p1 => {
+        html += `<tr><td class="row-header">${p1.name}</td>`;
+        products.forEach(p2 => {
+          if (p1.name === p2.name) {
+            html += '<td style="background:#f1f5f9;">-</td>';
+          } else {
+            html += `<td><input type="number" class="matrix-input" min="0" value="0" data-from="${p1.name}" data-to="${p2.name}"></td>`;
+          }
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      wrap.innerHTML = html;
     }
-    machineContent.appendChild(machineDiv);
-  });
 
-  const orderCard = document.createElement('div');
-  orderCard.className = 'card';
-  orderCard.innerHTML = `
-    <div class="card-header">
-      <div class="card-title">Order Summary</div>
-      <div class="card-description">Completion status and deadline analysis</div>
-    </div>
-    <div class="card-content">
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Order</th><th>Finished</th><th>Deadline</th><th>Status</th><th>Hours Overdue</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.orders_summary.map(order => `
-              <tr>
-                <td class="font-medium">${order.order}</td>
-                <td>${order.finished}</td>
-                <td>${order.deadline}</td>
-                <td>
-                  <span class="badge ${order.status === 'On Time' ? 'badge-success' : 'badge-danger'}">
-                    ${order.status}
-                  </span>
-                </td>
-                <td class="${order.hours_overdue > 0 ? 'text-danger font-medium' : 'text-success'}">
-                  ${order.hours_overdue}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
+    function renderOrders() {
+      const cnt = parseInt(document.getElementById('num-orders').value) || 0;
+      const wrap = document.getElementById('orders-list');
+      wrap.innerHTML = '';
+      const prods = getProducts();
+      for (let i = 1; i <= cnt; i++) {
+        const div = document.createElement('div');
+        div.className = 'item-card';
+        let html = `<h4 class="font-semibold mb-1" style="font-size:0.75rem;">Order ${i}</h4>`;
+        prods.forEach(p => {
+          html += `
+            <div class="form-row">
+              <label class="label">${p.name} qty:</label>
+              <input type="number" class="input input-sm" data-order="${i-1}" data-product="${p.name}" min="0" value="0">
+            </div>`;
+        });
+        html += `
+          <div class="form-row">
+            <label class="label">Deadline:</label>
+            <input type="datetime-local" class="input input-lg order-deadline">
+          </div>`;
+        div.innerHTML = html;
+        wrap.appendChild(div);
+      }
+    }
 
-  out.appendChild(machineCard);
-  out.appendChild(orderCard);
-  resultsSection.style.display = 'block';
+    function getMachineNames() {
+      return Array.from(document.querySelectorAll('.machine-name'))
+                  .map(i => i.value.trim())
+                  .filter(v => v);
+    }
+
+
+
+
+
+
+
+
+    
+   // Modified getMachineTypes to include count
+    function getMachineTypes() {
+      const rows = document.querySelectorAll('#machines-list .form-row');
+      return Array.from(rows).map(row => {
+        const name = row.querySelector('.machine-name')?.value.trim();
+        const count = parseInt(row.querySelector('.machine-count')?.value) || 1;
+        const dropdown = row.querySelector('.operations-dropdown');
+        const operations = [];
+        
+        if (dropdown) {
+          const checkedBoxes = dropdown.querySelectorAll('.dropdown-item input:checked');
+          checkedBoxes.forEach(checkbox => {
+            operations.push(checkbox.value);
+          });
+        }
+        
+        return { name, count, operations };
+      }).filter(mt => mt.name);
+    }
+
+
+
+
+
+
+
+
+    function getProducts() {
+      return Array.from(document.querySelectorAll('#products-list .item-card')).map(card => {
+        const name = card.querySelector('.product-name').value.trim();
+        const tasks = Array.from(card.querySelectorAll('.task-item')).map(task => {
+          const op = task.querySelector('.task-operation').value;
+          const dur = parseInt(task.querySelector('.task-duration').value) || 0;
+          return [op, dur];
+        });
+        return { name, tasks };
+      }).filter(p => p.name);
+    }
+
+    function getSetupTimes() {
+      const tbl = {};
+      document.querySelectorAll('.matrix-input').forEach(i => {
+        const from = i.dataset.from, to = i.dataset.to, v = parseInt(i.value) || 0;
+        tbl[from] = tbl[from] || {};
+        tbl[from][to] = v;
+      });
+      return tbl;
+    }
+
+    function getOrders() {
+      return Array.from(document.querySelectorAll('#orders-list .item-card')).map((div, idx) => {
+        const qtys = {};
+        getProducts().forEach(p => {
+          const inp = div.querySelector(`input[data-order="${idx}"][data-product="${p.name}"]`);
+          if (inp) {
+            const q = parseInt(inp.value) || 0;
+            if (q > 0) qtys[p.name] = q;
+          }
+        });
+        const dl = div.querySelector('.order-deadline');
+        return { quantities: qtys, deadline: dl ? dl.value : '' };
+      });
+    }
+
+    document.getElementById('run').addEventListener('click', async () => {
+      const btn = document.getElementById('run');
+      const orig = btn.innerHTML;
+      btn.innerHTML = 'Running...';
+      btn.disabled = true;
+      try {
+        const payload = {
+          machine_types: getMachineTypes(),
+          operations: getOperations(),
+          product_tasks: Object.fromEntries(getProducts().map(p => [p.name, p.tasks])),
+          setup_times: getSetupTimes(),
+          orders: getOrders(),
+          start_datetime: document.getElementById('start-datetime').value
+        };
+        
+        console.log('Sending payload to scheduler:', payload);
+        
+        // Validate payload before sending
+      // Enhanced validation with detailed logging
+console.log('Validating payload:', payload);
+
+if (payload.machine_types.length === 0) {
+  alert('Error: No machines configured. Please add at least one machine.');
+  return;
 }
+
+if (payload.operations.length === 0) {
+  alert('Error: No operations defined. Please add at least one operation.');
+  return;
+}
+
+// More lenient validation - only check if we have some valid data
+const hasValidMachines = payload.machine_types.some(mt => mt.name && mt.name.trim());
+if (!hasValidMachines) {
+  alert('Error: No valid machines found. Please add at least one machine with a name.');
+  return;
+}
+
+const hasValidProducts = Object.keys(payload.product_tasks).length > 0;
+if (!hasValidProducts) {
+  alert('Error: No products configured. Please add at least one product.');
+  return;
+}
+
+// Check if at least one order has some quantities (allow empty orders)
+const hasAnyOrders = payload.orders.length > 0;
+if (!hasAnyOrders) {
+  alert('Error: No orders found. Please add at least one order.');
+  return;
+}
+
+console.log('Validation passed - sending to backend');
+        
+        const res = await fetch('/api/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        console.log('Received response:', data);
+        renderResults(data);
+      } catch (error) {
+        console.error('Error running scheduler:', error);
+        alert('Error running scheduler: ' + error.message);
+      } finally {
+        btn.innerHTML = orig;
+        btn.disabled = false;
+      }
+    });
+
+    function renderResults(data) {
+      const resultsSection = document.getElementById('results-section');
+      const out = document.getElementById('output');
+      out.innerHTML = '';
+
+      if (!data || typeof data !== 'object') {
+        alert('Error: Scheduler returned invalid data.');
+        console.error('renderResults received:', data);
+        return;
+      }
+
+      if (!data.machine_schedule || typeof data.machine_schedule !== 'object') {
+        alert('Error: Missing machine schedule in response.');
+        console.error('Missing machine_schedule in result:', data);
+        return;
+      }
+
+      if (!Array.isArray(data.orders_summary)) {
+        alert('Error: Missing orders summary in response.');
+        console.error('Missing orders_summary in result:', data);
+        return;
+      }
+
+      if (data.utilization_score !== undefined) {
+        document.getElementById('utilization-score').innerText =
+          'Utilization Score: ' + data.utilization_score + ' / 10';
+        document.getElementById('utilization-card').style.display = 'block';
+      }
+
+      if (data.optimality) {
+        document.getElementById('optimality-card').style.display = 'block';
+        document.getElementById('solver-status').innerText =
+          'Status: ' + data.optimality.status;
+        document.getElementById('objective-value').innerText =
+          'Objective Value: ' + data.optimality.objective;
+        document.getElementById('lower-bound').innerText =
+          'Lower Bound: ' + data.optimality.lower_bound;
+        document.getElementById('optimality-gap').innerText =
+          'Optimality Gap: ' + data.optimality.gap + '%';
+      }
+
+      const machineCard = document.createElement('div');
+      machineCard.className = 'card';
+      machineCard.innerHTML = `
+        <div class="card-header">
+          <div class="card-title">Machine Schedules</div>
+          <div class="card-description">Detailed timeline for each machine</div>
+        </div>
+        <div class="card-content" id="machine-schedules"></div>
+      `;
+      const machineContent = machineCard.querySelector('#machine-schedules');
+      Object.entries(data.machine_schedule).forEach(([machine, schedule]) => {
+        const machineDiv = document.createElement('div');
+        machineDiv.className = 'mb-1';
+        const title = document.createElement('h4');
+        title.className = 'font-semibold mb-1';
+        title.style.fontSize = '0.75rem';
+        title.textContent = machine;
+        machineDiv.appendChild(title);
+
+        if (!schedule.length) {
+          const noTasks = document.createElement('p');
+          noTasks.textContent = 'No tasks scheduled';
+          noTasks.style.color = '#64748b';
+          noTasks.style.fontStyle = 'italic';
+          noTasks.style.fontSize = '0.7rem';
+          machineDiv.appendChild(noTasks);
+        } else {
+          const tableContainer = document.createElement('div');
+          tableContainer.className = 'table-container';
+          tableContainer.innerHTML = `
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Product</th>
+                  <th>Task</th>
+                  <th>Operation</th>
+                  <th>Start</th>
+                  <th>End</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${schedule.map(seg => `
+                  <tr>
+                    <td class="font-medium">${seg.order}</td>
+                    <td>${seg.product}</td>
+                    <td>${seg.task_index}</td>
+                    <td>${seg.operation || '-'}</td>
+                    <td>${seg.start}</td>
+                    <td>${seg.end}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+          machineDiv.appendChild(tableContainer);
+        }
+        machineContent.appendChild(machineDiv);
+      });
+
+      const orderCard = document.createElement('div');
+      orderCard.className = 'card';
+      orderCard.innerHTML = `
+        <div class="card-header">
+          <div class="card-title">Order Summary</div>
+          <div class="card-description">Completion status and deadline analysis</div>
+        </div>
+        <div class="card-content">
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Order</th><th>Finished</th><th>Deadline</th><th>Status</th><th>Hours Overdue</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.orders_summary.map(order => `
+                  <tr>
+                    <td class="font-medium">${order.order}</td>
+                    <td>${order.finished}</td>
+                    <td>${order.deadline}</td>
+                    <td>
+                      <span class="badge ${order.status === 'On Time' ? 'badge-success' : 'badge-danger'}">
+                        ${order.status}
+                      </span>
+                    </td>
+                    <td class="${order.hours_overdue > 0 ? 'text-danger font-medium' : 'text-success'}">
+                      ${order.hours_overdue}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      out.appendChild(machineCard);
+      out.appendChild(orderCard);
+      resultsSection.style.display = 'block';
+    }
+
+
+
+
+
+
+
+
+
+
 
 document.getElementById('demo').addEventListener('click', () => {
     console.log('Loading lightweight random demo data...');
@@ -1261,9 +1251,11 @@ document.getElementById('demo').addEventListener('click', () => {
         for (let i = 0; i < numMachines && i < machineRows.length; i++) {
           const machineRow = machineRows[i];
           const machineName = machineNames[i % machineNames.length];
+          const machineCount = Math.floor(Math.random() * 2) + 1; // 1-2 machines
           
           machineRow.querySelector('.machine-name').value = machineName;
-                
+          machineRow.querySelector('.machine-count').value = machineCount;
+          
           let assignedOps = [];
           
           // For the first machines, ensure we assign unassigned operations
@@ -1295,7 +1287,7 @@ document.getElementById('demo').addEventListener('click', () => {
           if (dropdown) {
             setDropdownValues(dropdown, assignedOps);
           }
-          console.log(`Machine ${i + 1}: ${machineName} - Operations:`, assignedOps);
+          console.log(`Machine ${i + 1}: ${machineName} (${machineCount} units) - Operations:`, assignedOps);
         }
         
         // Verify all operations are assigned
@@ -1396,177 +1388,427 @@ document.getElementById('demo').addEventListener('click', () => {
     console.log('Lightweight random demo data loading complete');
 });
 
-// Save/Load Logic - FIXED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Save/Load Logic - Updated
 document.getElementById('save-draft').addEventListener('click', () => {
-  const payload = {
-    counts: {
-        operations: document.getElementById('num-operations').value,
-        machines: document.getElementById('num-machines').value,
-        products: document.getElementById('num-products').value,
-        orders: document.getElementById('num-orders').value,
-    },
-    operations: getOperations(),
-    machine_types: getMachineTypes(),
-    product_tasks: Object.fromEntries(getProducts().map(p => [p.name, p.tasks])),
-    setup_times: getSetupTimes(),
-    orders: getOrders(),
-    start_datetime: document.getElementById('start-datetime').value
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'scheduler-draft.json';
-  a.click();
-  URL.revokeObjectURL(url);
+  try {
+    const payload = {
+      version: '1.0', // Added for future compatibility
+      counts: {
+        operations: parseInt(document.getElementById('num-operations').value) || 0,
+        machines: parseInt(document.getElementById('num-machines').value) || 0,
+        products: parseInt(document.getElementById('num-products').value) || 0,
+        orders: parseInt(document.getElementById('num-orders').value) || 0,
+      },
+      operations: getOperations(),
+      machine_types: getMachineTypes(),
+      product_tasks: Object.fromEntries(getProducts().map(p => [p.name, p.tasks])),
+      setup_times: getSetupTimes(),
+      orders: getOrders(),
+      start_datetime: document.getElementById('start-datetime').value
+    };
+
+    // Validate before saving
+    if (!payload.operations.length || !payload.machine_types.length || !Object.keys(payload.product_tasks).length) {
+      alert('Cannot save draft: Please ensure operations, machines, and products are configured.');
+      return;
+    }
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'scheduler-draft.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error saving draft:', error);
+    alert('Error saving draft: ' + error.message);
+  }
 });
 
 document.getElementById('load-draft').addEventListener('click', () => {
   document.getElementById('file-input').click();
 });
-
-document.getElementById('file-input').addEventListener('change', e => {
+document.getElementById('file-input').addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result);
-      if (data.counts && data.operations) {
-          loadDraft(data);
-      } else {
-          alert('The JSON file has an outdated format or is missing required data.');
+
+  try {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const data = JSON.parse(reader.result);
+        
+        // Remove this strict validation that's causing the issue:
+        // if (!data.version || !data.counts || !data.operations || !data.machine_types || !data.product_tasks) {
+        //   alert('Invalid draft file: missing required data.');
+        //   return;
+        // }
+        
+        // Just call loadDraft directly - it will handle validation internally
+        await loadDraft(data);
+        
+      } catch (error) {
+        console.error('Error parsing JSON:', error);
+        alert('Invalid JSON file: ' + error.message);
       }
-    } catch {
-      alert('Invalid JSON file.');
-    }
-  };
-  reader.readAsText(file);
-  e.target.value = '';
+    };
+    reader.readAsText(file);
+  } catch (error) {
+    console.error('Error reading file:', error);
+    alert('Error reading file: ' + error.message);
+  } finally {
+    e.target.value = ''; // Reset file input
+  }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function loadDraft(data) {
-  if (!data.counts || !data.operations || !data.machine_types) {
-    alert('Invalid draft file: missing required data.');
-    return;
-  }
+  try {
+    console.log('Loading draft data:', data);
 
-  console.log('Loading draft data:', data);
+    // Clear existing results
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('utilization-card').style.display = 'none';
+    document.getElementById('optimality-card').style.display = 'none';
 
-  // 1. Operations
-  document.getElementById('num-operations').value = data.counts.operations || 0;
-  renderOperations();
-  const opInputs = document.querySelectorAll('.operation-name');
-  data.operations.forEach((opName, i) => {
-      if(opInputs[i]) opInputs[i].value = opName;
-  });
-
-  // 2. Machines
-  document.getElementById('num-machines').value = data.counts.machines || 0;
-  renderMachines.call(document.getElementById('num-machines'));
-  
-  // Wait for machines to render
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  const machineRows = document.querySelectorAll('#machines-list .form-row');
-  data.machine_types.forEach((mt, i) => {
-    const row = machineRows[i];
-    if (row) {
-        row.querySelector('.machine-name').value = mt.name || '';
+    // Check if this is API format data - look for the specific structure
+    if (data.hasOwnProperty('error') && data.hasOwnProperty('msg') && data.hasOwnProperty('data')) {
+      console.log('Detected API format data - converting to draft format');
+      
+      if (data.error === true) {
+        alert('Error in API data: ' + data.msg);
+        return;
+      }
+      
+      const apiData = data.data;
+      console.log('API data contents:', apiData);
+      
+      // Convert API format to draft format with sample data (enhanced version)
+      const convertedData = {
+        version: "1.0",
+        counts: {
+          operations: apiData.operations ? apiData.operations.length : 0,
+          machines: apiData.machines ? apiData.machines.length : 0,
+          products: apiData.fg_numbers ? apiData.fg_numbers.length : 0,
+          orders: 2 // Default 2 orders
+        },
+        operations: apiData.operations || [],
+        machine_types: [],
+        product_tasks: {},
+        setup_times: {},
+        orders: [],
+        start_datetime: new Date().toISOString().slice(0, 16)
+      };
+      
+      // Convert machines with smart operation assignment
+      if (apiData.machines && apiData.operations) {
+        // Filter operations to exclude status-like operations
+        const productionOps = apiData.operations.filter(op => 
+          !['TO DO', 'WIP', 'QA', 'Done'].includes(op)
+        );
         
-        // Set dropdown operations
+        convertedData.machine_types = apiData.machines.map((machineName, index) => {
+          let assignedOps = [];
+          
+          // Smart assignment based on machine name
+          if (machineName.toLowerCase().includes('cut')) {
+            assignedOps = productionOps.filter(op => op.toLowerCase().includes('cut'));
+          } else if (machineName.toLowerCase().includes('assemble')) {
+            assignedOps = productionOps.filter(op => op.toLowerCase().includes('assemble'));
+          } else if (machineName.toLowerCase().includes('paint')) {
+            assignedOps = productionOps.filter(op => op.toLowerCase().includes('paint'));
+          }
+          
+          // If no smart match, assign operations in round-robin fashion
+          if (assignedOps.length === 0 && productionOps.length > 0) {
+            assignedOps = [productionOps[index % productionOps.length]];
+          }
+          
+          // If still no operations and we have status operations, use them
+          if (assignedOps.length === 0) {
+            assignedOps = [apiData.operations[index % apiData.operations.length]];
+          }
+          
+          return {
+            name: machineName,
+            count: 1,
+            operations: assignedOps
+          };
+        });
+      }
+      
+      // Convert fg_numbers to products with sample tasks
+      if (apiData.fg_numbers && apiData.operations) {
+        apiData.fg_numbers.forEach((fg, index) => {
+          // Generate 2-3 random tasks per product
+          const numTasks = Math.floor(Math.random() * 2) + 2; // 2-3 tasks
+          const tasks = [];
+          
+          for (let i = 0; i < numTasks; i++) {
+            const randomOp = apiData.operations[Math.floor(Math.random() * apiData.operations.length)];
+            const randomDuration = Math.floor(Math.random() * 3) + 1; // 1-3 hours
+            tasks.push([randomOp, randomDuration]);
+          }
+          
+          convertedData.product_tasks[fg] = tasks;
+        });
+        
+        // Create setup times matrix
+        apiData.fg_numbers.forEach(fg1 => {
+          convertedData.setup_times[fg1] = {};
+          apiData.fg_numbers.forEach(fg2 => {
+            if (fg1 !== fg2) {
+              convertedData.setup_times[fg1][fg2] = 0;
+            }
+          });
+        });
+      }
+      
+      // Generate sample orders
+      if (apiData.fg_numbers) {
+        const currentDate = new Date();
+        
+        // Order 1: Mix of products
+        const order1Quantities = {};
+        const numProductsInOrder1 = Math.min(2, apiData.fg_numbers.length);
+        for (let i = 0; i < numProductsInOrder1; i++) {
+          const product = apiData.fg_numbers[i];
+          order1Quantities[product] = Math.floor(Math.random() * 3) + 1; // 1-3 quantity
+        }
+        
+        const deadline1 = new Date(currentDate.getTime() + 4 * 24 * 60 * 60 * 1000); // 4 days from now
+        convertedData.orders.push({
+          quantities: order1Quantities,
+          deadline: deadline1.toISOString().slice(0, 16)
+        });
+        
+        // Order 2: Different product mix
+        const order2Quantities = {};
+        const startIndex = Math.floor(apiData.fg_numbers.length / 2);
+        for (let i = startIndex; i < apiData.fg_numbers.length; i++) {
+          const product = apiData.fg_numbers[i];
+          order2Quantities[product] = Math.floor(Math.random() * 3) + 1; // 1-3 quantity
+        }
+        
+        const deadline2 = new Date(currentDate.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+        convertedData.orders.push({
+          quantities: order2Quantities,
+          deadline: deadline2.toISOString().slice(0, 16)
+        });
+      }
+      
+      console.log('Converted API data to draft format:', convertedData);
+      
+      // Offer to download the converted data
+      // const downloadConverted = confirm('API data detected and converted to draft format. Would you like to download the converted file?');
+      // if (downloadConverted) {
+      //   const blob = new Blob([JSON.stringify(convertedData, null, 2)], { type: 'application/json' });
+      //   const url = URL.createObjectURL(blob);
+      //   const a = document.createElement('a');
+      //   a.href = url;
+      //   a.download = 'converted-draft.json';
+      //   a.click();
+      //   URL.revokeObjectURL(url);
+      // }
+      
+      // Now load the converted data using the existing logic
+      data = convertedData;
+    }
+
+    // Validate the data structure (works for both API converted and regular draft data)
+    if (!data.operations || !Array.isArray(data.operations)) {
+      alert('Invalid file: missing or invalid operations data.');
+      return;
+    }
+    
+    if (!data.machine_types || !Array.isArray(data.machine_types)) {
+      alert('Invalid file: missing or invalid machine types data.');
+      return;
+    }
+    
+    if (!data.product_tasks || typeof data.product_tasks !== 'object') {
+      alert('Invalid file: missing or invalid product tasks data.');
+      return;
+    }
+    
+    // Set default values for missing fields
+    if (!data.counts) {
+      data.counts = {
+        operations: data.operations.length,
+        machines: data.machine_types.length,
+        products: Object.keys(data.product_tasks).length,
+        orders: data.orders ? data.orders.length : 0
+      };
+    }
+    
+    if (!data.setup_times) {
+      data.setup_times = {};
+    }
+    
+    if (!data.orders) {
+      data.orders = [];
+    }
+    
+    if (!data.start_datetime) {
+      data.start_datetime = new Date().toISOString().slice(0, 16);
+    }
+
+    // 1. Operations
+    document.getElementById('num-operations').value = data.counts.operations || 0;
+    renderOperations();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const opInputs = document.querySelectorAll('.operation-name');
+    data.operations.forEach((opName, i) => {
+      if (opInputs[i]) opInputs[i].value = opName || '';
+    });
+
+    // 2. Machines
+    document.getElementById('num-machines').value = data.counts.machines || 0;
+    renderMachines.call(document.getElementById('num-machines'));
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const machineRows = document.querySelectorAll('#machines-list .form-row');
+    data.machine_types.forEach((mt, i) => {
+      const row = machineRows[i];
+      if (row) {
+        row.querySelector('.machine-name').value = mt.name || '';
+        row.querySelector('.machine-count').value = mt.count || 1;
         const dropdown = row.querySelector('.operations-dropdown');
         if (dropdown && mt.operations && mt.operations.length > 0) {
-          setDropdownValues(dropdown, mt.operations);
+          const validOps = mt.operations.filter(op => data.operations.includes(op));
+          setDropdownValues(dropdown, validOps);
+          if (validOps.length < mt.operations.length) {
+            console.warn(`Some operations for machine ${mt.name} were invalid:`, mt.operations);
+          }
         }
-    }
-  });
+      }
+    });
 
-  // 3. Products
-  document.getElementById('num-products').value = data.counts.products || 0;
-  renderProducts();
-  
-  // Wait for products to render
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  const productCards = document.querySelectorAll('#products-list .item-card');
-  const productNames = Object.keys(data.product_tasks || {});
-  
-  for (let i = 0; i < productNames.length; i++) {
-    const productName = productNames[i];
-    const card = productCards[i];
-    if (card && data.product_tasks[productName]) {
+    // 3. Products
+    document.getElementById('num-products').value = data.counts.products || 0;
+    renderProducts();
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const productCards = document.querySelectorAll('#products-list .item-card');
+    const productNames = Object.keys(data.product_tasks || {});
+    
+    for (let i = 0; i < productNames.length && i < productCards.length; i++) {
+      const productName = productNames[i];
+      const card = productCards[i];
+      if (card && data.product_tasks[productName]) {
         const tasks = data.product_tasks[productName];
-        
         card.querySelector('.product-name').value = productName;
         card.querySelector('.num-tasks').value = tasks.length;
         renderTasks(card);
         
-        // Wait for tasks to render
         await new Promise(resolve => setTimeout(resolve, 150));
         
         const taskItems = card.querySelectorAll('.task-item');
         tasks.forEach((task, j) => {
-            if (taskItems[j]) {
-                const opSelect = taskItems[j].querySelector('.task-operation');
-                const durInput = taskItems[j].querySelector('.task-duration');
-                if (opSelect) opSelect.value = task[0];
-                if (durInput) durInput.value = task[1];
+          if (taskItems[j]) {
+            const opSelect = taskItems[j].querySelector('.task-operation');
+            const durInput = taskItems[j].querySelector('.task-duration');
+            if (opSelect && task[0] && data.operations.includes(task[0])) {
+              opSelect.value = task[0];
+            } else if (opSelect && task[0]) {
+              console.warn(`Operation ${task[0]} not found in current operations list for product ${productName}, task ${j}`);
             }
-        });
-    }
-  }
-  
-  // 4. Setup Times
-  renderSetupMatrix();
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
-  if (data.setup_times) {
-      for (const from in data.setup_times) {
-          for (const to in data.setup_times[from]) {
-              const inp = document.querySelector(`.matrix-input[data-from="${from}"][data-to="${to}"]`);
-              if (inp) inp.value = data.setup_times[from][to];
+            if (durInput && task[1]) {
+              durInput.value = task[1];
+            }
           }
+        });
       }
-  }
+    }
 
-  // 5. Orders
-  document.getElementById('num-orders').value = data.counts.orders || 0;
-  renderOrders();
-  
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  const orderCards = document.querySelectorAll('#orders-list .item-card');
-  if (data.orders) {
-    data.orders.forEach((order, i) => {
+    // 4. Setup Times
+    renderSetupMatrix();
+    await new Promise(resolve => setTimeout(resolve, 200));
+    if (data.setup_times) {
+      for (const from in data.setup_times) {
+        for (const to in data.setup_times[from]) {
+          const inp = document.querySelector(`.matrix-input[data-from="${from}"][data-to="${to}"]`);
+          if (inp) inp.value = data.setup_times[from][to] || 0;
+        }
+      }
+    }
+
+    // 5. Orders
+    document.getElementById('num-orders').value = data.counts.orders || 0;
+    renderOrders();
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const orderCards = document.querySelectorAll('#orders-list .item-card');
+    if (data.orders) {
+      data.orders.forEach((order, i) => {
         const card = orderCards[i];
         if (card && order.quantities) {
-            for (const [product, qty] of Object.entries(order.quantities)) {
-                const qtyInput = card.querySelector(`input[data-product="${product}"]`);
-                if (qtyInput) qtyInput.value = qty;
-            }
-            const deadlineInput = card.querySelector('.order-deadline');
-            if (deadlineInput && order.deadline) {
-                deadlineInput.value = order.deadline.slice(0, 16);
-            }
+          for (const [product, qty] of Object.entries(order.quantities)) {
+            const qtyInput = card.querySelector(`input[data-product="${product}"]`);
+            if (qtyInput) qtyInput.value = qty;
+          }
+          const deadlineInput = card.querySelector('.order-deadline');
+          if (deadlineInput && order.deadline) {
+            deadlineInput.value = order.deadline.slice(0, 16);
+          }
         }
-    });
-  }
+      });
+    }
 
-  // 6. Start DateTime
-  if (data.start_datetime) {
-    document.getElementById('start-datetime').value = data.start_datetime.slice(0, 16);
-  }
+    // 6. Start DateTime
+    if (data.start_datetime) {
+      document.getElementById('start-datetime').value = data.start_datetime.slice(0, 16);
+    }
 
-  console.log('Draft loaded successfully!');
-  
-  // Verify data was loaded correctly
-  setTimeout(() => {
-    console.log('Verification - Operations:', getOperations());
-    console.log('Verification - Machine Types:', getMachineTypes());
-    console.log('Verification - Products:', getProducts());
-  }, 500);
+    console.log('Draft loaded successfully!');
+    
+    // Verification after loading
+    setTimeout(() => {
+      console.log('Verification - Operations:', getOperations());
+      console.log('Verification - Machine Types:', getMachineTypes());
+      console.log('Verification - Products:', getProducts());
+    }, 500);
+    
+  } catch (error) {
+    console.error('Error loading draft:', error);
+    alert('Error loading draft: ' + error.message);
+  }
 }
+
+
   </script>
 </body>
 </html>

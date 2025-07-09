@@ -1,0 +1,28 @@
+{
+    "error": false,
+    "msg": "success",
+    "data": {
+        "operations": [
+            "TO DO",
+            "WIP",
+            "QA",
+            "Done",
+            "cutting",
+            "Assemble",
+            "Painting"
+        ],
+        "machines": [
+            "Shoes Mass. Prod Line",
+            "Shoes Lean Prod Line",
+            "Shoes Modular Prod Line",
+            "GoGreen Prod Line",
+            "Concept Prod Line",
+            "Craft Prod Line"
+        ],
+        "fg_numbers": [
+            "BLT-LTH-001",
+            "KID-SCL-001",
+            "SPC-DNC-001"
+        ]
+    }
+}
