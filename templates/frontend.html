@@ -692,8 +692,7 @@
         div.innerHTML = `
           <label class="label">Machine ${i}:</label>
           <input type="text" class="input input-md machine-name" placeholder="Machine ${i}">
-          <label class="label">Count:</label>
-          <input type="number" class="input input-sm machine-count" min="1" value="1">
+          
           <label class="label">Operations:</label>
           <div class="operations-dropdown" data-machine="${i}">
             <div class="dropdown-toggle">
@@ -931,23 +930,22 @@
     
    // Modified getMachineTypes to include count
     function getMachineTypes() {
-      const rows = document.querySelectorAll('#machines-list .form-row');
-      return Array.from(rows).map(row => {
-        const name = row.querySelector('.machine-name')?.value.trim();
-        const count = parseInt(row.querySelector('.machine-count')?.value) || 1;
-        const dropdown = row.querySelector('.operations-dropdown');
-        const operations = [];
-        
-        if (dropdown) {
-          const checkedBoxes = dropdown.querySelectorAll('.dropdown-item input:checked');
-          checkedBoxes.forEach(checkbox => {
-            operations.push(checkbox.value);
-          });
-        }
-        
-        return { name, count, operations };
-      }).filter(mt => mt.name);
+  const rows = document.querySelectorAll('#machines-list .form-row');
+  return Array.from(rows).map(row => {
+    const name = row.querySelector('.machine-name')?.value.trim();
+    const dropdown = row.querySelector('.operations-dropdown');
+    const operations = [];
+    
+    if (dropdown) {
+      const checkedBoxes = dropdown.querySelectorAll('.dropdown-item input:checked');
+      checkedBoxes.forEach(checkbox => {
+        operations.push(checkbox.value);
+      });
     }
+    
+    return { name, count: 1, operations }; // Always set count to 1
+  }).filter(mt => mt.name);
+}
 
 
 
@@ -1254,7 +1252,7 @@ document.getElementById('demo').addEventListener('click', () => {
           const machineCount = Math.floor(Math.random() * 2) + 1; // 1-2 machines
           
           machineRow.querySelector('.machine-name').value = machineName;
-          machineRow.querySelector('.machine-count').value = machineCount;
+          
           
           let assignedOps = [];
           
@@ -1402,6 +1400,15 @@ document.getElementById('demo').addEventListener('click', () => {
 
 
 
+
+
+
+
+
+
+
+
+
 // Save/Load Logic - Updated
 document.getElementById('save-draft').addEventListener('click', () => {
   try {
@@ -1495,6 +1502,21 @@ document.getElementById('file-input').addEventListener('change', async e => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function loadDraft(data) {
   try {
     console.log('Loading draft data:', data);
@@ -1533,31 +1555,62 @@ async function loadDraft(data) {
         start_datetime: new Date().toISOString().slice(0, 16)
       };
       
-      // Convert machines with smart operation assignment
-      if (apiData.machines && apiData.operations) {
-        // Filter operations to exclude status-like operations
+      // Convert machines with their specific operations from API
+      if (apiData.machines && Array.isArray(apiData.machines)) {
+        convertedData.machine_types = apiData.machines.map(machineItem => {
+          return {
+            name: machineItem.name,
+            count: 1,
+            operations: machineItem.operations || [] // Use the specific operations from API
+          };
+        });
+      } else if (apiData.machines && Array.isArray(apiData.machines)) {
+        // Fallback: If machines is just an array of strings (old format)
+        const statusKeywords = ['TO DO', 'WIP', 'QA', 'Done', 'PENDING', 'COMPLETE', 'FINISHED', 'STARTED'];
         const productionOps = apiData.operations.filter(op => 
-          !['TO DO', 'WIP', 'QA', 'Done'].includes(op)
+          !statusKeywords.some(keyword => op.toUpperCase().includes(keyword.toUpperCase()))
         );
         
         convertedData.machine_types = apiData.machines.map((machineName, index) => {
           let assignedOps = [];
           
-          // Smart assignment based on machine name
-          if (machineName.toLowerCase().includes('cut')) {
-            assignedOps = productionOps.filter(op => op.toLowerCase().includes('cut'));
-          } else if (machineName.toLowerCase().includes('assemble')) {
-            assignedOps = productionOps.filter(op => op.toLowerCase().includes('assemble'));
-          } else if (machineName.toLowerCase().includes('paint')) {
-            assignedOps = productionOps.filter(op => op.toLowerCase().includes('paint'));
-          }
+          // DYNAMIC ASSIGNMENT: Find operations that share common words with machine name
+          const machineWords = machineName.toLowerCase()
+            .split(/[\s\-_\.]+/)
+            .filter(word => word.length > 2);
           
-          // If no smart match, assign operations in round-robin fashion
+          productionOps.forEach(operation => {
+            const operationWords = operation.toLowerCase()
+              .split(/[\s\-_\.]+/)
+              .filter(word => word.length > 2);
+            
+            const hasMatch = machineWords.some(machineWord => 
+              operationWords.some(opWord => 
+                machineWord === opWord ||
+                machineWord.includes(opWord) ||
+                opWord.includes(machineWord) ||
+                calculateSimilarity(machineWord, opWord) > 0.6
+              )
+            );
+            
+            if (hasMatch) {
+              assignedOps.push(operation);
+            }
+          });
+          
           if (assignedOps.length === 0 && productionOps.length > 0) {
-            assignedOps = [productionOps[index % productionOps.length]];
+            const opsPerMachine = Math.max(1, Math.floor(productionOps.length / apiData.machines.length));
+            const startIndex = (index * opsPerMachine) % productionOps.length;
+            
+            for (let i = 0; i < opsPerMachine && (startIndex + i) < productionOps.length; i++) {
+              assignedOps.push(productionOps[startIndex + i]);
+            }
+            
+            if (assignedOps.length === 0) {
+              assignedOps = [productionOps[index % productionOps.length]];
+            }
           }
           
-          // If still no operations and we have status operations, use them
           if (assignedOps.length === 0) {
             assignedOps = [apiData.operations[index % apiData.operations.length]];
           }
@@ -1570,42 +1623,46 @@ async function loadDraft(data) {
         });
       }
       
-      // Convert fg_numbers to products with sample tasks
-      if (apiData.fg_numbers && apiData.operations) {
-        apiData.fg_numbers.forEach((fg, index) => {
-          // Generate 2-3 random tasks per product
-          const numTasks = Math.floor(Math.random() * 2) + 2; // 2-3 tasks
+      // Convert fg_numbers to products with their specific operations
+      if (apiData.fg_numbers && Array.isArray(apiData.fg_numbers)) {
+        apiData.fg_numbers.forEach((fgItem, index) => {
+          const productName = fgItem.fg_number;
+          const productOperations = fgItem.operations || [];
+          
+          // Generate tasks based on the product's specific operations - use ALL operations
+          const numTasks = productOperations.length; // Use exactly the number of operations the product has
           const tasks = [];
           
+          // Use ALL the product's specific operations in order
           for (let i = 0; i < numTasks; i++) {
-            const randomOp = apiData.operations[Math.floor(Math.random() * apiData.operations.length)];
+            const taskOperation = productOperations[i]; // Use each operation in sequence
             const randomDuration = Math.floor(Math.random() * 3) + 1; // 1-3 hours
-            tasks.push([randomOp, randomDuration]);
+            tasks.push([taskOperation, randomDuration]);
           }
           
-          convertedData.product_tasks[fg] = tasks;
+          convertedData.product_tasks[productName] = tasks;
         });
         
-        // Create setup times matrix
+        // Create setup times matrix using fg_number names
         apiData.fg_numbers.forEach(fg1 => {
-          convertedData.setup_times[fg1] = {};
+          convertedData.setup_times[fg1.fg_number] = {};
           apiData.fg_numbers.forEach(fg2 => {
-            if (fg1 !== fg2) {
-              convertedData.setup_times[fg1][fg2] = 0;
+            if (fg1.fg_number !== fg2.fg_number) {
+              convertedData.setup_times[fg1.fg_number][fg2.fg_number] = 0;
             }
           });
         });
       }
       
-      // Generate sample orders
-      if (apiData.fg_numbers) {
+      // Generate sample orders using fg_number names
+      if (apiData.fg_numbers && Array.isArray(apiData.fg_numbers)) {
         const currentDate = new Date();
         
         // Order 1: Mix of products
         const order1Quantities = {};
         const numProductsInOrder1 = Math.min(2, apiData.fg_numbers.length);
         for (let i = 0; i < numProductsInOrder1; i++) {
-          const product = apiData.fg_numbers[i];
+          const product = apiData.fg_numbers[i].fg_number;
           order1Quantities[product] = Math.floor(Math.random() * 3) + 1; // 1-3 quantity
         }
         
@@ -1619,7 +1676,7 @@ async function loadDraft(data) {
         const order2Quantities = {};
         const startIndex = Math.floor(apiData.fg_numbers.length / 2);
         for (let i = startIndex; i < apiData.fg_numbers.length; i++) {
-          const product = apiData.fg_numbers[i];
+          const product = apiData.fg_numbers[i].fg_number;
           order2Quantities[product] = Math.floor(Math.random() * 3) + 1; // 1-3 quantity
         }
         
@@ -1631,18 +1688,6 @@ async function loadDraft(data) {
       }
       
       console.log('Converted API data to draft format:', convertedData);
-      
-      // Offer to download the converted data
-      // const downloadConverted = confirm('API data detected and converted to draft format. Would you like to download the converted file?');
-      // if (downloadConverted) {
-      //   const blob = new Blob([JSON.stringify(convertedData, null, 2)], { type: 'application/json' });
-      //   const url = URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = 'converted-draft.json';
-      //   a.click();
-      //   URL.revokeObjectURL(url);
-      // }
       
       // Now load the converted data using the existing logic
       data = convertedData;
@@ -1705,7 +1750,7 @@ async function loadDraft(data) {
       const row = machineRows[i];
       if (row) {
         row.querySelector('.machine-name').value = mt.name || '';
-        row.querySelector('.machine-count').value = mt.count || 1;
+        
         const dropdown = row.querySelector('.operations-dropdown');
         if (dropdown && mt.operations && mt.operations.length > 0) {
           const validOps = mt.operations.filter(op => data.operations.includes(op));
@@ -1806,6 +1851,46 @@ async function loadDraft(data) {
     console.error('Error loading draft:', error);
     alert('Error loading draft: ' + error.message);
   }
+}
+
+// Helper function to calculate string similarity
+function calculateSimilarity(str1, str2) {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = levenshteinDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+// Levenshtein distance algorithm
+function levenshteinDistance(str1, str2) {
+  const matrix = [];
+  
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
 }
 
 
